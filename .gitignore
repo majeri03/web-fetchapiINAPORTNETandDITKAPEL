@@ -1,6 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,node,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,node,windows
-service-account-key.json
+.service-account-key.json
 ### Node ###
 # Logs
 logs
