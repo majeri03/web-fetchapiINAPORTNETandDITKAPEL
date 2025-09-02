@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard - Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme:{extend:{colors:{ink:{50:'#f6f7f8',100:'#eceef1',200:'#d8dde2',300:'#b6c0cd',400:'#8b9db4',500:'#637e9c',600:'#4a6380',700:'#3b5068',800:'#334457',900:'#2d3a49',950:'#1c2530'}},boxShadow:{soft:'0 10px 25px -10px rgba(2,12,27,.15)'},borderRadius:{xl2:'1rem'}}}
+    }
+  </script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <style>
+    html,body{height:100%} .fade-enter-active,.fade-leave-active{transition:opacity .18s ease} .fade-enter-from,.fade-leave-to{opacity:0} .scrollbar-thin::-webkit-scrollbar{height:8px;width:8px} .scrollbar-thin::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px} .scrollbar-thin::-webkit-scrollbar-track{background:transparent} .fade-row-enter-active,.fade-row-leave-active {transition: all 0.4s ease-out;} .fade-row-enter-from,.fade-row-leave-to {opacity: 0;transform: translateY(15px);} .fade-row-move {transition: transform 0.4s ease;}
+  </style>
+</head>
+<body class="h-full bg-ink-50 text-ink-900">
+
+<div id="app" class="flex h-full">
+
+  <aside class="w-64 bg-white border-r border-ink-100 flex flex-col shrink-0">
+    <div class="px-6 py-4 border-b border-ink-100 flex items-center gap-3">
+      <div class="h-10 w-10 rounded-xl2 bg-ink-900 text-white grid place-content-center shadow-soft">DV</div>
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight">Data Viewer</h1>
+        <p class="text-xs text-ink-600">v4.0 Final</p>
+      </div>
+    </div>
+    <nav class="flex-1 p-4 space-y-2">
+      <a href="#" @click.prevent="setActiveMenu('inaportnet')" :class="{'bg-ink-900 text-white': activeMenu === 'inaportnet', 'hover:bg-ink-100': activeMenu !== 'inaportnet'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>⚓</span><span>Inaportnet & Ditkapel</span></a>
+      <a href="#" @click.prevent="setActiveMenu('ditkapel_search')" :class="{'bg-ink-900 text-white': activeMenu === 'ditkapel_search', 'hover:bg-ink-100': activeMenu !== 'ditkapel_search'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>🔍</span><span>Pencarian Ditkapel</span></a>
+      <a href="#" @click.prevent="setActiveMenu('summary')" :class="{'bg-ink-900 text-white': activeMenu === 'summary', 'hover:bg-ink-100': activeMenu !== 'summary'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>📈</span><span>Ringkasan</span></a>
+      <a href="#" @click.prevent="setActiveMenu('history')" :class="{'bg-ink-900 text-white': activeMenu === 'history', 'hover:bg-ink-100': activeMenu !== 'history'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>💾</span><span>Riwayat Cache</span></a>
+    </nav>
+    <div class="p-4 border-t border-ink-100">
+        <div class="text-xs text-ink-600 mb-2">User: <b class="font-mono">{{ userEmail }}</b></div>
+        <button @click="handleLogout" class="w-full px-3 py-2 text-sm rounded-lg border border-red-200 text-red-700 hover:bg-red-50">Logout</button>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+      <div v-if="activeMenu === 'inaportnet'">
+        <data-filters
+            v-model:form-port="form.port"
+            v-model:form-jenis="form.jenis"
+            v-model:form-start-year="form.start_year"
+            v-model:form-start-month="form.start_month"
+            v-model:form-end-year="form.end_year"
+            v-model:form-end-month="form.end_month"
+            :loading="loading"
+            @fetch-inaportnet="fetchInaportnet"
+        ></data-filters>
+        
+        <section class="mt-6 bg-white shadow-soft rounded-xl2 border border-ink-100 p-4">
+            <h2 class="font-semibold text-sm mb-3">Tindakan & Filter Tabel</h2>
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="space-y-3">
+                    <button @click="enrichPerusahaan" :disabled="!rows.length || loading" class="w-full text-left px-3 py-2 text-sm rounded-lg border border-ink-200 hover:bg-ink-100 disabled:opacity-40 disabled:cursor-not-allowed">1. Lengkapi Perusahaan + Asal/Tujuan</button>
+                    <button @click="enrichDitkapel" :disabled="!rows.length || loading" class="w-full text-left px-3 py-2 text-sm rounded-lg border border-ink-200 hover:bg-ink-100 disabled:opacity-40 disabled:cursor-not-allowed">2. Lengkapi Data dari Ditkapel</button>
+                </div>
+                <div class="space-y-3">
+                     <input v-model.trim="search.q" placeholder="Cari teks bebas di tabel..." class="w-full px-3 py-2 text-sm rounded-lg border border-ink-200">
+                     <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                           <span class="text-xs text-ink-600">Baris/hal:</span>
+                           <select v-model.number="page.size" class="px-2 py-1 text-sm rounded-lg border border-ink-200">
+                               <option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option>
+                           </select>
+                        </div>
+                        <div class="flex items-center gap-2">
+                           
+                           <div class="relative">
+                               <button @click="exportDropdownOpen = !exportDropdownOpen" :disabled="filteredRows.length === 0" class="px-4 py-2 text-sm rounded-lg bg-ink-900 text-white hover:bg-ink-800 disabled:opacity-50 flex items-center gap-2">
+                                   Export Data <span>▼</span>
+                               </button>
+                               <div v-if="exportDropdownOpen" @click.away="exportDropdownOpen = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-ink-100 z-10">
+                                   <a href="#" @click.prevent="exportData('xlsx')" class="block px-4 py-2 text-sm text-ink-700 hover:bg-ink-50">Download sebagai Excel (.xlsx)</a>
+                                   <a href="#" @click.prevent="exportData('csv')" class="block px-4 py-2 text-sm text-ink-700 hover:bg-ink-50">Download sebagai CSV (.csv)</a>
+                               </div>
+                           </div>
+                        </div>
+                     </div>
+                </div>
+            </div>
+            <div class="mt-4" v-if="columns.length">
+              <details class="rounded-xl2 border border-ink-100 bg-ink-50/60 p-3">
+                <summary class="cursor-pointer text-sm font-medium">Tampilkan Filter Lanjutan per Kolom</summary>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <label v-for="c in columns" :key="'vc-'+c.key" class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border cursor-pointer" :class="c.visible ? 'bg-ink-900 text-white border-ink-900' : 'border-ink-200 hover:bg-ink-100'">
+                    <input type="checkbox" v-model="c.visible" class="hidden">
+                    <span>{{c.label}}</span>
+                    </label>
+                </div>
+                <div class="grid md:grid-cols-3 gap-3 mt-3 max-h-72 overflow-auto pr-2 scrollbar-thin">
+                  <div v-for="c in columns" :key="'fl-'+c.key" class="bg-white rounded-lg border border-ink-100 p-3">
+                    <div class="text-xs font-semibold mb-2 flex justify-between items-center">
+                      <span>{{ c.label }}</span>
+                      <button @click="filters[c.key] = []" title="Bersihkan filter ini" class="text-xs text-ink-400 hover:text-ink-800">✖</button>
+                    </div>
+                    <div class="space-y-1 max-h-48 overflow-auto pr-1 scrollbar-thin">
+                      <label v-for="v in uniqueValues(c.key).slice(0,200)" :key="'opt-'+c.key+v" class="flex items-center gap-2 text-xs">
+                        <input type="checkbox" :value="v" v-model="filters[c.key]" class="accent-ink-900">
+                        <span class="truncate" :title="v">{{ v || '— (Kosong)' }}</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3 text-right">
+                  <button @click="clearAllFilters" class="px-3 py-2 text-xs rounded-lg border border-ink-200 hover:bg-ink-100">Bersihkan Semua Filter</button>
+                </div>
+              </details>
+            </div>
+        </section>
+
+        <div class="mt-6">
+             <data-table
+                :rows="rows" :filtered-rows="filteredRows" :paged-rows="pagedRows"
+                :visible-columns="visibleColumns" :page="page" :max-page="maxPage"
+                :loading="loading" @lookup-ditkapel="lookupDitkapel" @go-page="goPage"
+                :stat-unique="statUnique"
+             ></data-table>
+        </div>
+      </div>
+      <div v-if="activeMenu === 'ditkapel_search'">
+        <h1 class="text-xl font-bold mb-4">Pencarian Data Kapal di Ditkapel</h1>
+        <div class="grid md:grid-cols-2 gap-6">
+
+            <section class="bg-white shadow-soft rounded-xl2 border border-ink-100 p-4 space-y-3">
+            <h2 class="font-semibold">Pencarian Tunggal</h2>
+            <p class="text-xs text-ink-600">Cari data untuk satu nama kapal spesifik.</p>
+            <div class="flex gap-2">
+                <input v-model.trim="ditkapelForm.singleName" @keyup.enter="searchDitkapelSingle" placeholder="Contoh: LAMBELU" class="flex-1 px-3 py-2 text-sm rounded-lg border border-ink-200">
+                <button @click="searchDitkapelSingle" :disabled="ditkapelLoading" class="px-4 py-2 text-sm rounded-lg bg-ink-900 text-white hover:bg-ink-800 disabled:opacity-50">
+                    {{ ditkapelLoading ? 'Mencari...' : 'Cari' }}
+                </button>
+            </div>
+            </section>
+
+            <section class="bg-white shadow-soft rounded-xl2 border border-ink-100 p-4 space-y-3">
+            <h2 class="font-semibold">Pencarian Massal dari Data Inaportnet</h2>
+            <p class="text-xs text-ink-600">Cari semua data kapal unik yang ada di tabel Inaportnet Anda saat ini. Pastikan Anda sudah mengambil data Inaportnet terlebih dahulu.</p>
+            <button @click="searchDitkapelBatch" :disabled="!rows.length || ditkapelLoading" class="w-full px-4 py-2 text-sm rounded-lg bg-ink-800 text-white hover:bg-ink-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                {{ ditkapelLoading ? 'Sedang Memproses...' : `Cari ${uniqueShipNames.length} Kapal Unik` }}
+            </button>
+            </section>
+            <section class="mt-6 bg-white shadow-soft rounded-xl2 border border-ink-100 p-4" v-if="ditkapelResults.rows.length > 0">
+                <div class="grid md:grid-cols-2 gap-4">
+    <div class="space-y-3">
+        <input v-model.trim="ditkapelSearch.q" placeholder="Cari di hasil pencarian..." class="w-full px-3 py-2 text-sm rounded-lg border border-ink-200">
+        <div class="flex items-center gap-2">
+            <span class="text-xs text-ink-600">Baris/hal:</span>
+            <select v-model.number="ditkapelPage.size" class="px-2 py-1 text-sm rounded-lg border border-ink-200">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="flex justify-end items-start gap-2">
+        <div class="relative">
+            <button @click="ditkapelColumnFilterOpen = !ditkapelColumnFilterOpen" class="px-4 py-2 text-sm rounded-lg border border-ink-200 hover:bg-ink-100 flex items-center gap-2">
+                Tampilkan Kolom <span>▼</span>
+            </button>
+            <div v-if="ditkapelColumnFilterOpen" @click.away="ditkapelColumnFilterOpen = false" class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-ink-100 z-10">
+                <div class="py-1">
+                    <div v-for="c in ditkapelResults.columns" :key="'vc-dkp-'+c.key" class="px-4 py-2">
+                        <label @click.stop class="flex items-center gap-3 cursor-pointer text-sm">
+                        <input type="checkbox" :checked="c.visible" @change="c.visible = !c.visible" class="h-4 w-4 rounded border-gray-300 accent-ink-900">
+                        <span>{{c.label}}</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative">
+            <button @click="ditkapelExportOpen = !ditkapelExportOpen" class="px-4 py-2 text-sm rounded-lg bg-ink-900 text-white hover:bg-ink-800 flex items-center gap-2">
+                Export Hasil <span>▼</span>
+            </button>
+            <div v-if="ditkapelExportOpen" @click.away="ditkapelExportOpen = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-ink-100 z-10">
+                <a href="#" @click.prevent="exportDitkapelData('xlsx')" class="block px-4 py-2 text-sm text-ink-700 hover:bg-ink-50">Excel (.xlsx)</a>
+                <a href="#" @click.prevent="exportDitkapelData('csv')" class="block px-4 py-2 text-sm text-ink-700 hover:bg-ink-50">CSV (.csv)</a>
+            </div>
+        </div>
+    </div>
+</div>
+                <div class="mt-4">
+                <details class="rounded-xl2 border border-ink-100 bg-ink-50/60 p-3">
+                    <summary class="cursor-pointer text-sm font-medium">Tampilkan Filter per Kolom untuk Hasil Ditkapel</summary>
+                    <div class="grid md:grid-cols-3 gap-3 mt-3 max-h-72 overflow-auto pr-2 scrollbar-thin">
+    <div v-for="c in ditkapelResults.columns" :key="'dfl-'+c.key" class="bg-white rounded-lg border border-ink-100 p-3">
+        <div class="text-xs font-semibold mb-2 flex justify-between items-center">
+            <span>{{ c.label }}</span>
+            <button @click="ditkapelFilters[c.key] = []" title="Bersihkan filter ini" class="text-xs text-ink-400 hover:text-ink-800">✖</button>
+        </div>
+        <div class="space-y-1 max-h-48 overflow-auto pr-1 scrollbar-thin">
+            <label v-for="v in uniqueDitkapelValues(c.key)" :key="'dopt-'+c.key+v" class="flex items-center gap-2 text-xs">
+                <input type="checkbox" :value="v" v-model="ditkapelFilters[c.key]" class="accent-ink-900">
+                <span class="truncate" :title="v">{{ v || '— (Kosong)' }}</span>
+            </label>
+        </div>
+    </div>
+</div>
+                </details>
+                </div>
+                
+            </section>
+        </div>
+
+        <section class="mt-6 bg-white shadow-soft rounded-xl2 border border-ink-100 overflow-hidden" v-if="visibleDitkapelColumns.length > 0">
+            <div class="px-4 py-3 border-b">
+                <h3 class="font-semibold">Hasil Pencarian ({{ filteredDitkapelRows.length }} dari {{ ditkapelResults.rows.length }} data ditampilkan)</h3>
+            </div>
+            <div class="overflow-auto scrollbar-thin max-h-[60vh]">
+            <table class="min-w-full text-sm">
+                <thead class="bg-ink-50 border-y border-ink-100 sticky top-0">
+                <tr>
+                    <th v-for="c in visibleDitkapelColumns" :key="'dh-'+c.key" class="text-left px-3 py-2 font-semibold whitespace-nowrap">{{ c.label }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(r, i) in pagedDitkapelRows" :key="'dr-'+i" class="border-b border-ink-100 hover:bg-ink-50/40">
+                  <td v-for="c in visibleDitkapelColumns" :key="'drc-'+i+c.key" class="px-3 py-2 whitespace-nowrap">
+                    {{ r[c.key] ?? '' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+
+    <div class="px-4 py-3 flex items-center gap-2 justify-between border-t border-ink-100">
+        <div class="text-xs text-ink-600">
+            Menampilkan <b>{{ Math.min((ditkapelPage.index-1)*ditkapelPage.size+1, filteredDitkapelRows.length) }}</b> – <b>{{ Math.min(ditkapelPage.index*ditkapelPage.size, filteredDitkapelRows.length) }}</b>
+            dari <b>{{ filteredDitkapelRows.length }}</b>
+        </div>
+        <div class="flex items-center gap-1">
+            <button @click="goDitkapelPage(1)" :disabled="ditkapelPage.index===1" class="px-2 py-1 text-sm rounded border border-ink-200 disabled:opacity-40">«</button>
+            <button @click="goDitkapelPage(ditkapelPage.index-1)" :disabled="ditkapelPage.index===1" class="px-2 py-1 text-sm rounded border border-ink-200 disabled:opacity-40">Prev</button>
+            <span class="px-2 text-sm">Hal. {{ ditkapelPage.index }} / {{ maxDitkapelPage }}</span>
+            <button @click="goDitkapelPage(ditkapelPage.index+1)" :disabled="ditkapelPage.index===maxDitkapelPage" class="px-2 py-1 text-sm rounded border border-ink-200 disabled:opacity-40">Next</button>
+            <button @click="goDitkapelPage(maxDitkapelPage)" :disabled="ditkapelPage.index===maxDitkapelPage" class="px-2 py-1 text-sm rounded border border-ink-200 disabled:opacity-40">»</button>
+        </div>
+    </div>
+    </section>
+        </section>
+        </div>
+       <div v-if="activeMenu === 'summary'">
+          <summary-view :company-summary="companySummary" @export-summary="exportSummaryExcel"></summary-view>
+      </div>
+      
+      <div v-if="activeMenu === 'history'">
+        <section class="bg-white shadow-soft rounded-xl2 border border-ink-100 p-4">
+            <h1 class="text-xl font-bold">Riwayat Pengambilan Data</h1>
+            <p class="text-ink-600 mt-1">Setiap kali Anda mengambil data, salinannya disimpan di sini. Anda bisa memuat ulang sesi lama atau menghapusnya.</p>
+            <div v-if="history.length === 0" class="mt-6 text-center py-10 bg-ink-50 rounded-lg">
+                <p class="text-ink-600">Belum ada riwayat tersimpan.</p>
+            </div>
+            <div v-else class="mt-4 space-y-3">
+                <div v-for="item in history" :key="item.key" class="grid grid-cols-5 items-center gap-4 p-3 border rounded-lg hover:bg-ink-50 transition-colors">
+                    <div class="col-span-2">
+                        <div class="font-semibold">{{ item.title }}</div>
+                        <div class="text-xs text-ink-600">{{ new Date(item.timestamp).toLocaleString() }}</div>
+                    </div>
+                    <div class="text-sm text-ink-700">{{ item.rowCount }} baris</div>
+                    <div class="col-span-2 flex justify-end gap-2">
+                        <button @click="loadDataFromHistory(item.key)" class="px-3 py-2 text-sm rounded-lg border border-ink-200 hover:bg-ink-100">Muat</button>
+                        <button @click="deleteHistoryItem(item.key)" class="px-3 py-2 text-sm rounded-lg border border-red-200 text-red-700 hover:bg-red-50">Hapus</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+      </div>
+      
+    </div>
+  </main>
+
+  <transition name="fade">
+    <div v-if="overlay" class="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm grid place-content-center">
+      <div class="bg-white border border-ink-100 rounded-xl2 p-5 shadow-soft w-64">
+        <div class="flex items-center gap-3">
+          <svg class="animate-spin h-5 w-5 text-ink-900" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          <div class="text-sm font-medium">{{ overlayMsg }}</div>
+        </div>
+        <div v-if="progress.show" class="mt-3">
+          <div class="w-full bg-ink-100 rounded-full h-2.5"><div class="bg-ink-800 h-2.5 rounded-full" :style="{ width: (progress.current / progress.total * 100) + '%' }"></div></div>
+          <div class="text-xs text-center text-ink-600 mt-1">{{ progress.current }} / {{ progress.total }}</div>
+        </div>
+      </div>
+    </div>
+  </transition>
+  <transition name="fade">
+    <div v-if="modal.open" class="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm p-6">
+      <div class="bg-white border border-ink-100 rounded-xl2 shadow-soft max-w-4xl mx-auto h-[75vh] flex flex-col">
+        <div class="px-4 py-3 border-b flex items-center justify-between"><div class="text-sm font-semibold">{{ modal.title }}</div><button @click="modal.open=false" class="px-2 py-1 text-sm rounded border border-ink-200">Tutup</button></div>
+        <div class="p-4 overflow-auto"><table class="min-w-full text-sm"><thead class="bg-ink-50 border-y border-ink-100"><tr><th v-for="h in modal.headers" :key="'mh-'+h" class="text-left px-3 py-2 font-semibold whitespace-nowrap">{{h}}</th></tr></thead><tbody><tr v-for="(r, i) in modal.rows" :key="'mr-'+i" class="border-b border-ink-100"><td v-for="h in modal.headers" :key="'mrc-'+i+h" class="px-3 py-2 whitespace-nowrap">{{ r[h] ?? '' }}</td></tr></tbody></table></div>
+        <div class="px-4 py-3 border-t text-xs text-ink-600">Hasil pencarian dari Ditkapel untuk nama kapal yang diklik.</div>
+      </div>
+    </div>
+  </transition>
+</div>
+
+<script type="module">
+  import DataFilters from './components/DataFilters.js';
+  import DataTable from './components/DataTable.js';
+  import SummaryView from './components/SummaryView.js';
+
+  const { createApp, reactive, computed, toRefs, onMounted, watch } = Vue;
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCu67-8qd-LJZmUQghTvAii1D7rmPAijSk",
+    authDomain: "fetchapi-kapal.firebaseapp.com",
+    projectId: "fetchapi-kapal",
+    storageBucket: "fetchapi-kapal.appspot.com",
+    messagingSenderId: "61850649615",
+    appId: "1:61850649615:web:7147a41f0e735983ff8f7a"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  
+  createApp({
+    components: { DataFilters, DataTable, SummaryView },
+    setup(){
+        const s = reactive({
+            userEmail: '',
+            activeMenu: 'inaportnet',
+            form: {
+                port: 'IDPTL', jenis: 'dn', 
+                start_year: new Date().getFullYear(), start_month: new Date().getMonth() + 1, 
+                end_year: new Date().getFullYear(), end_month: new Date().getMonth() + 1 
+            },
+            rows: [],
+            columns: [],
+            history: [],
+            loading: false,
+            overlay: false,
+            overlayMsg: '',
+            progress: { current: 0, total: 0, show: false },
+            search: { q: '' }, 
+            page: { index: 1, size: 25 },
+            modal: { open: false, title: '', headers: [], rows: [] },
+            filters: {},
+            exportDropdownOpen: false,
+            ditkapelForm: { singleName: '' }, // State untuk form input
+            ditkapelLoading: false, // State loading khusus untuk pencarian Ditkapel
+            ditkapelResults: { columns: [], rows: [] }, // State untuk menampung hasil
+            ditkapelSearch: { q: '' }, // Pencarian teks bebas khusus untuk tabel Ditkapel
+            ditkapelFilters: {}, // Filter per kolom khusus untuk tabel Ditkapel
+            ditkapelExportOpen: false, // Status dropdown ekspor khusus Ditkapel
+            ditkapelPage: { index: 1, size: 25 },
+            columnFilterDropdownOpen: false,
+            ditkapelColumnFilterOpen: false,
+        });
+
+        auth.onAuthStateChanged(user => {
+            if (user) { s.userEmail = user.email; } 
+            else { window.location.href = '/login.html'; }
+        });
+
+        const getHistoryIndex = () => JSON.parse(localStorage.getItem('inaportnet_history_index') || '[]');
+        const saveHistoryIndex = (index) => localStorage.setItem('inaportnet_history_index', JSON.stringify(index));
+        const loadHistory = () => { s.history = getHistoryIndex().sort((a,b) => b.timestamp - a.timestamp); };
+
+        const saveDataToCache = (title) => {
+            const timestamp = Date.now();
+            const key = `inaportnet_data_${timestamp}`;
+            const cacheData = { rows: s.rows, columns: s.columns, timestamp };
+            localStorage.setItem(key, JSON.stringify(cacheData));
+            const index = getHistoryIndex();
+            index.push({ key, title, timestamp, rowCount: s.rows.length });
+            saveHistoryIndex(index);
+            loadHistory();
+        };
+
+        const loadDataFromHistory = (key) => {
+            const cachedData = localStorage.getItem(key);
+            if (cachedData) {
+                const data = JSON.parse(cachedData);
+                s.rows = data.rows || [];
+                s.columns = data.columns || [];
+                s.activeMenu = 'inaportnet';
+                alert(`Data dari riwayat "${s.history.find(h => h.key === key)?.title}" berhasil dimuat.`);
+            }
+        };
+
+        const deleteHistoryItem = (key) => {
+            if (confirm('Apakah Anda yakin ingin menghapus data ini dari riwayat?')) {
+                localStorage.removeItem(key);
+                let index = getHistoryIndex();
+                index = index.filter(item => item.key !== key);
+                saveHistoryIndex(index);
+                loadHistory();
+            }
+        };
+        
+        onMounted(() => {
+            loadHistory();
+            const lastMenu = localStorage.getItem('active_menu');
+            if (lastMenu) s.activeMenu = lastMenu;
+        });
+
+        const setActiveMenu = (menu) => {
+            s.activeMenu = menu;
+            localStorage.setItem('active_menu', menu);
+        };
+        
+        const setRows = (headers, arr) => {
+            s.columns = headers.map(h => ({ key: h, label: h, visible: true }));
+            s.rows = arr.map(r => { const o = {}; s.columns.forEach(c => o[c.key] = r[c.key] ?? ''); return o; });
+            s.page.index = 1;
+            s.filters = {};
+            s.columns.forEach(c => s.filters[c.key] = []);
+        };
+
+        const fetchInaportnet = async () => {
+          s.loading = true; s.overlay = true; s.overlayMsg = 'Mengambil data...';
+          try {
+            const params = new URLSearchParams({
+              port: s.form.port, jenis: s.form.jenis,
+              start_year: s.form.start_year, start_month: s.form.start_month,
+              end_year: s.form.end_year, end_month: s.form.end_month,
+            });
+            const r = await fetch(`/api/list?${params.toString()}`);
+             if (r.status === 401) {
+                alert("Sesi Anda telah berakhir. Harap login kembali.");
+                window.location.href = '/login.html';
+                return;
+            }
+            if (!r.ok) throw new Error(`Server merespons: ${(await r.json()).error}`);
+            
+            const j = await r.json();
+            const res_headers = ["Nomor PKK", "Nama Kapal", "Nama Perusahaan", "Jenis Trayek", "Asal (Kedatangan)", "Tujuan (Keberangkatan)"];
+            const res_rows = (j.data || []).map(d => ({
+              "Nomor PKK": d.nomor_pkk || '', "Nama Kapal": d.nama_kapal || '', "Nama Perusahaan": "",
+              "Jenis Trayek": (d.trayek_berangkat || d.trayek_datang || ''), "Asal (Kedatangan)": "", "Tujuan (Keberangkatan)": ""
+            }));
+            
+            setRows(res_headers, res_rows);
+            const title = `${s.form.port} (${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year})`;
+            saveDataToCache(title);
+
+            alert(`${res_rows.length} baris data berhasil diambil & disimpan ke riwayat.`);
+          } catch (e) {
+            alert('Gagal mengambil data: ' + e.message);
+          } finally {
+            s.loading = false; s.overlay = false;
+          }
+        };
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const enrichPerusahaan = async () => {
+          const tasks = s.rows.filter(row => row["Nomor PKK"] && !row["Nama Perusahaan"]);
+          if (tasks.length === 0) { alert("Semua baris yang memungkinkan sudah memiliki Nama Perusahaan."); return; }
+          
+          s.progress = { current: 0, total: tasks.length, show: true };
+          s.overlay = true; s.overlayMsg = `Melengkapi ${tasks.length} data perusahaan...`;
+          s.loading = true;
+
+          for (const row of tasks) {
+            try {
+              const pkk = row["Nomor PKK"];
+              const response = await fetch(`/api/detail?nomor_pkk=${encodeURIComponent(pkk)}`);
+              if (response.ok) {
+                const j = await response.json();
+                const originalIndex = s.rows.findIndex(r => r["Nomor PKK"] === pkk);
+                if (originalIndex !== -1) {
+                  if (j.perusahaan) s.rows[originalIndex]["Nama Perusahaan"] = j.perusahaan;
+                  if (j.asal) s.rows[originalIndex]["Asal (Kedatangan)"] = j.asal;
+                  if (j.tujuan) s.rows[originalIndex]["Tujuan (Keberangkatan)"] = j.tujuan;
+                }
+              }
+            } catch (e) { 
+              console.error(`Gagal memproses PKK ${row["Nomor PKK"]}:`, e);
+            } finally {
+              s.progress.current++;
+              await sleep(200);
+            }
+          }
+          alert("Proses melengkapi data perusahaan selesai.");
+          s.loading = false; s.overlay = false; s.progress.show = false;
+        };
+
+        const enrichDitkapel = async () => {
+          const tasks = s.rows.filter(row => row["Nama Kapal"] && !row["Nomor IMO"]);
+          if (tasks.length === 0) { 
+            alert("Semua data kapal yang memungkinkan sudah dilengkapi dari Ditkapel."); 
+            return; 
+          }
+          
+          s.progress = { current: 0, total: tasks.length, show: true };
+          s.overlay = true; s.overlayMsg = `Melengkapi ${tasks.length} data kapal...`;
+          s.loading = true;
+
+          const newKeys = ['Nama Pemilik', 'Nomor IMO', 'Tahun Pembuatan', 'Jenis Kapal'];
+          newKeys.forEach(key => {
+            if (!s.columns.some(c => c.key === key)) {
+              s.columns.push({ key: key, label: key, visible: true });
+              s.filters[key] = [];
+            }
+          });
+
+          for (const row of tasks) {
+            try {
+              const namaKapal = row['Nama Kapal'];
+              const response = await fetch(`/api/kapal?nama=${encodeURIComponent(namaKapal)}`);
+              
+              if (response.ok) {
+                const json = await response.json();
+                const result = (json && json.data.length > 0) ? json.data[0] : null;
+
+                if (result) {
+                  const originalIndex = s.rows.findIndex(r => r["Nomor PKK"] === row["Nomor PKK"]);
+                  if (originalIndex !== -1) {
+                    s.rows[originalIndex]['Nama Pemilik'] = result['Nama Pemilik'] || '';
+                    s.rows[originalIndex]['Nomor IMO'] = result['Nomor IMO'] || '';
+                    s.rows[originalIndex]['Tahun Pembuatan'] = result['Tahun Pembuatan'] || '';
+                    s.rows[originalIndex]['Jenis Kapal'] = result['Jenis Kapal'] || '';
+                  }
+                }
+              }
+            } catch (e) { 
+              console.error(`Gagal memproses kapal ${row["Nama Kapal"]}:`, e);
+            } finally {
+                s.progress.current++;
+                await sleep(250);
+            }
+          }
+          
+          alert("Proses melengkapi data dari Ditkapel selesai.");
+          s.loading = false; s.overlay = false; s.progress.show = false;
+        };
+        
+        const uniqueShipNames = computed(() => {
+            const names = new Set(s.rows.map(r => (r['Nama Kapal'] || '').trim()).filter(Boolean));
+            return Array.from(names);
+        });
+        const filteredDitkapelRows = computed(() => {
+            return s.ditkapelResults.rows.filter(row => {
+                const searchPass = (() => {
+                    const q = s.ditkapelSearch.q.trim().toLowerCase();
+                    if (!q) return true;
+                    return Object.values(row).some(val => String(val).toLowerCase().includes(q));
+                })();
+                if (!searchPass) return false;
+
+                const filterPass = (() => {
+                    for (const key in s.ditkapelFilters) {
+                        const selectedValues = s.ditkapelFilters[key];
+                        if (selectedValues && selectedValues.length > 0) {
+                            const rowValue = String(row[key] || '');
+                            if (!selectedValues.includes(rowValue)) return false;
+                        }
+                    }
+                    return true;
+                })();
+                if (!filterPass) return false;
+
+                return true;
+            });
+        });
+
+        const uniqueDitkapelValues = (key) => {
+            const set = new Set(s.ditkapelResults.rows.map(r => (r[key] || '').toString().trim()));
+            return Array.from(set).sort((a,b) => a.localeCompare(b));
+        };
+        const handleLogout = async () => {
+          await fetch('/api/logout', { method: 'POST' });
+          await auth.signOut();
+          window.location.href = '/login.html';
+        };
+
+        const exportDitkapelData = (format) => {
+        s.ditkapelExportOpen = false;
+        const dataToExport = filteredDitkapelRows.value;
+        if (dataToExport.length === 0) {
+            alert("Tidak ada data untuk diekspor.");
+            return;
+        }
+
+        // Ambil hanya kolom yang sedang terlihat
+        const visibleCols = visibleDitkapelColumns.value;
+
+        // Ubah data agar sesuai dengan kolom yang terlihat
+        const data = dataToExport.map(row => {
+            const newRow = {};
+            visibleCols.forEach(col => {
+                newRow[col.label] = row[col.key]; // Gunakan label sebagai header
+            });
+            return newRow;
+        });
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Data Ditkapel');
+
+        if (format === 'xlsx') {
+            XLSX.writeFile(wb, 'hasil_pencarian_ditkapel.xlsx');
+        } else if (format === 'csv') {
+            const csvString = XLSX.utils.sheet_to_csv(ws);
+            const blob = new Blob([csvString], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'hasil_pencarian_ditkapel.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    };
+        const lookupDitkapel = async (nama) => {
+            if(!nama) return;
+            s.overlay = true; s.overlayMsg = 'Mencari detail kapal...';
+            try {
+                const r = await fetch(`/api/kapal?nama=${encodeURIComponent(nama)}`);
+                if(!r.ok) throw new Error('HTTP '+r.status);
+                const j = await r.json();
+                s.modal = { open: true, title: `Ditkapel: ${nama}`, headers: j.headers || [], rows: j.data || [] };
+            } catch(e) {
+                alert('Gagal fetch Ditkapel: ' + e.message);
+            } finally { s.overlay = false; }
+        };
+        
+        const visibleColumns = computed(() => s.columns.filter(c => c.visible));
+        
+        const filteredRows = computed(() => {
+            return s.rows.filter(row => {
+                const searchPass = (() => {
+                    const q = s.search.q.trim().toLowerCase();
+                    if (!q) return true;
+                    return Object.values(row).some(val => String(val).toLowerCase().includes(q));
+                })();
+                if (!searchPass) return false;
+
+                const filterPass = (() => {
+                    for (const key in s.filters) {
+                        const selectedValues = s.filters[key];
+                        if (selectedValues && selectedValues.length > 0) {
+                            const rowValue = String(row[key] || '');
+                            if (!selectedValues.includes(rowValue)) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                })();
+                if (!filterPass) return false;
+
+                return true;
+            });
+        });
+
+        const uniqueValues = (key) => {
+            const set = new Set(s.rows.map(r => (r[key] || '').toString().trim()));
+            return Array.from(set).sort((a,b) => a.localeCompare(b));
+        };
+        
+        const clearAllFilters = () => {
+            for (const key in s.filters) { s.filters[key] = []; }
+        };
+
+        const maxPage = computed(() => Math.max(1, Math.ceil(filteredRows.value.length / s.page.size)));
+        
+        const pagedRows = computed(() => {
+            const start = (s.page.index - 1) * s.page.size;
+            return filteredRows.value.slice(start, start + s.page.size);
+        });
+        
+        const goPage = (p) => { s.page.index = Math.min(Math.max(1, p), maxPage.value); };
+        
+        const companySummary = computed(() => {
+          if (!filteredRows.value.length) return [];
+          const groups = {};
+          filteredRows.value.forEach(row => {
+            const company = (row['Nama Perusahaan'] || 'N/A').trim();
+            if(company==='N/A' || company==='') return;
+            if (!groups[company]) groups[company] = { companyName: company, shipSet: new Set(), totalRecords: 0 };
+            const ship = (row['Nama Kapal'] || '').trim();
+            if(ship) groups[company].shipSet.add(ship);
+            groups[company].totalRecords++;
+          });
+          return Object.values(groups).map(g => ({...g, uniqueShipCount: g.shipSet.size, shipList: Array.from(g.shipSet).sort().join(', ')})).sort((a,b) => b.totalRecords - a.totalRecords);
+        });
+
+        // Letakkan ini di dekat computed property lainnya
+        const maxDitkapelPage = computed(() => Math.max(1, Math.ceil(filteredDitkapelRows.value.length / s.ditkapelPage.size)));
+
+        const pagedDitkapelRows = computed(() => {
+            const start = (s.ditkapelPage.index - 1) * s.ditkapelPage.size;
+            return filteredDitkapelRows.value.slice(start, start + s.ditkapelPage.size);
+        });
+        const visibleDitkapelColumns = computed(() => s.ditkapelResults.columns.filter(c => c.visible));
+        const goDitkapelPage = (p) => {
+            s.ditkapelPage.index = Math.min(Math.max(1, p), maxDitkapelPage.value);
+        };
+
+        // Tambahkan watcher ini untuk mereset halaman saat filter berubah
+        watch([() => s.ditkapelSearch.q, filteredDitkapelRows], () => {
+            s.ditkapelPage.index = 1;
+        });
+        const statUnique = (key) => {
+            if (!s.columns.some(c => c.key === key)) return 0;
+            return new Set(filteredRows.value.map(r => (r[key] || '').trim()).filter(Boolean)).size;
+        };
+
+        const searchDitkapelSingle = async () => {
+    if (!s.ditkapelForm.singleName) {
+        alert('Harap masukkan nama kapal.');
+        return;
+    }
+    s.ditkapelLoading = true;
+    s.ditkapelResults = { columns:[], rows: [] }; // Kosongkan hasil lama
+    try {
+        const r = await fetch(`/api/kapal?nama=${encodeURIComponent(s.ditkapelForm.singleName)}`);
+        if (!r.ok) throw new Error('Gagal mengambil data dari server.');
+        const j = await r.json();
+        s.ditkapelResults.rows = j.data || [];
+        s.ditkapelResults.columns = (j.headers || []).map(h => ({ key: h, label: h, visible: true }));
+        s.ditkapelFilters = {};
+        s.ditkapelResults.columns.forEach(c => {
+            s.ditkapelFilters[c.key] = [];
+        });
+    } catch (e) {
+        alert('Terjadi kesalahan: ' + e.message);
+    } finally {
+        s.ditkapelLoading = false;
+    }
+};
+
+const searchDitkapelBatch = async () => {
+    if (uniqueShipNames.value.length === 0) {
+        alert('Tidak ada nama kapal unik untuk dicari. Ambil data Inaportnet terlebih dahulu.');
+        return;
+    }
+    s.ditkapelLoading = true;
+    s.ditkapelResults = { columns: [], rows: [] }; // Kosongkan hasil lama
+    try {
+        // Menggunakan endpoint BARU /api/kapal/batch
+        const response = await fetch('/api/kapal/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ names: uniqueShipNames.value })
+        });
+        if (!response.ok) throw new Error('Gagal mengambil data dari server.');
+        const j = await response.json();
+        s.ditkapelResults.rows = j.data || [];
+        s.ditkapelResults.columns = (j.headers || []).map(h => ({ key: h, label: h, visible: true }));
+        s.ditkapelFilters = {};
+        s.ditkapelResults.columns.forEach(c => {
+            s.ditkapelFilters[c.key] = [];
+        });
+            } catch (e) {
+                alert('Terjadi kesalahan: ' + e.message);
+            } finally {
+                s.ditkapelLoading = false;
+            }
+        };
+        const exportData = (format) => {
+            s.exportDropdownOpen = false;
+            const dataToExport = filteredRows.value;
+            if (dataToExport.length === 0) {
+                alert("Tidak ada data terfilter untuk diekspor.");
+                return;
+            }
+
+            const data = dataToExport.map(r => { 
+                const o = {}; 
+                visibleColumns.value.forEach(c => o[c.label] = r[c.key]);
+                return o; 
+            });
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Data Terfilter');
+            
+            if (format === 'xlsx') {
+                XLSX.writeFile(wb, 'data_terfilter.xlsx');
+            } else if (format === 'csv') {
+                const csvString = XLSX.utils.sheet_to_csv(ws);
+                const blob = new Blob([csvString], {type: 'text/csv;charset=utf-8;'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data_terfilter.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        };
+
+        const exportSummaryExcel = () => {
+          const data = companySummary.value.map(summary => ({
+            "Nama Perusahaan": summary.companyName,
+            "Jumlah Kapal Unik": summary.uniqueShipCount,
+            "Total Catatan": summary.totalRecords,
+            "Daftar Nama Kapal": summary.shipList
+          }));
+          if (!data.length) { alert('Tidak ada data untuk diekspor'); return; }
+          const ws = XLSX.utils.json_to_sheet(data);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan Perusahaan');
+          XLSX.writeFile(wb, `ringkasan-perusahaan.xlsx`);
+        };
+        
+        return {
+            ...toRefs(s),
+            setActiveMenu,
+            fetchInaportnet, enrichPerusahaan, enrichDitkapel,
+            handleLogout, lookupDitkapel,
+            loadDataFromHistory, deleteHistoryItem,
+            visibleColumns, filteredRows, pagedRows, maxPage, goPage,
+            companySummary, statUnique,
+            uniqueValues, clearAllFilters,
+            exportData, exportSummaryExcel,
+            uniqueShipNames,
+            searchDitkapelSingle,
+            searchDitkapelBatch,
+            filteredDitkapelRows,
+            uniqueDitkapelValues,
+            exportDitkapelData,
+            maxDitkapelPage,
+            pagedDitkapelRows,
+            goDitkapelPage,
+            visibleDitkapelColumns,
+        }
+    }
+  }).mount('#app');
+</script>
+
+</body>
+</html>

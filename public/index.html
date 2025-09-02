@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Inaportnet & Ditkapel Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body class="h-full bg-gray-50 grid place-content-center">
+  <div class="text-center">
+    <h1 class="text-xl font-semibold">Memuat...</h1>
+    <p class="text-sm text-gray-600">Mengarahkan ke halaman dashboard.</p>
+  </div>
+
+<script>
+  // GANTI DENGAN KONFIGURASI FIREBASE PROYEK ANDA
+  const firebaseConfig = {
+    apiKey: "AIzaSyCu67-8qd-LJZmUQghTvAii1D7rmPAijSk",
+    authDomain: "fetchapi-kapal.firebaseapp.com",
+    projectId: "fetchapi-kapal",
+    storageBucket: "fetchapi-kapal.firebasestorage.app",
+    messagingSenderId: "61850649615",
+    appId: "1:61850649615:web:7147a41f0e735983ff8f7a"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      // Jika user login, arahkan ke dashboard.html
+      window.location.replace('/dashboard.html');
+    } else {
+      // Jika tidak ada user, arahkan ke login.html
+      window.location.replace('/login.html');
+    }
+  });
+</script>
+</body>
+</html>

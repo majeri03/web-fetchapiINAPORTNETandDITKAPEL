@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Login - Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+</head>
+<body class="h-full bg-gray-50 grid place-content-center">
+<div id="app" class="w-80">
+  <div class="text-center mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900">Selamat Datang</h1>
+    <p class="text-sm text-gray-500">Silakan login untuk melanjutkan</p>
+  </div>
+  <div class="bg-white shadow-md rounded-lg p-6">
+    <form @submit.prevent="handleLogin">
+      <div class="space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+          <input v-model="form.email" type="email" id="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <input v-model="form.password" type="password" id="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div v-if="error" class="text-xs text-center text-red-600 bg-red-50 p-2 rounded-md">
+          {{ error }}
+        </div>
+        <div>
+          <button type="submit" :disabled="loading" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-900 focus:outline-none disabled:opacity-50">
+            {{ loading ? 'Memproses...' : 'Login' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // GANTI DENGAN KONFIGURASI FIREBASE PROYEK ANDA
+  const firebaseConfig = {
+    apiKey: "AIzaSyCu67-8qd-LJZmUQghTvAii1D7rmPAijSk",
+    authDomain: "fetchapi-kapal.firebaseapp.com",
+    projectId: "fetchapi-kapal",
+    storageBucket: "fetchapi-kapal.appspot.com",
+    messagingSenderId: "61850649615",
+    appId: "1:61850649615:web:7147a41f0e735983ff8f7a"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  const { createApp, reactive, toRefs } = Vue;
+  createApp({
+    setup() {
+      const state = reactive({
+        form: { email: '', password: '' },
+        loading: false,
+        error: ''
+      });
+
+      // Redirect jika sudah ada sesi aktif (opsional, tapi bagus)
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          // Jangan langsung redirect, biarkan handleLogin yang mengurus
+        }
+      });
+
+      const handleLogin = async () => {
+        state.loading = true;
+        state.error = '';
+        try {
+          // 1. Login ke Firebase di browser
+          const userCredential = await auth.signInWithEmailAndPassword(state.form.email, state.form.password);
+          
+          // 2. Dapatkan token dari Firebase
+          const token = await userCredential.user.getIdToken();
+
+          // 3. Kirim token ke server LOKAL untuk membuat sesi (INI BAGIAN BARU)
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token })
+          });
+
+          if (!response.ok) {
+            throw new Error('Gagal membuat sesi di server.');
+          }
+
+          // 4. Jika sesi berhasil dibuat, baru pindah ke dashboard
+          window.location.href = '/dashboard.html';
+
+        } catch (e) {
+          // Tangani error Firebase atau error sesi
+          switch (e.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+              state.error = "Email atau password yang Anda masukkan salah.";
+              break;
+            case 'auth/invalid-email':
+              state.error = "Format email tidak valid.";
+              break;
+            default:
+              state.error = "Terjadi kesalahan saat mencoba login.";
+              console.error("Login error:", e);
+              break;
+          }
+        } finally {
+          state.loading = false;
+        }
+      };
+      
+      return { ...toRefs(state), handleLogin };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
