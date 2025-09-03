@@ -280,6 +280,18 @@ app.post('/api/kapal/batch', isAuthenticated, async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+const fs = require('fs');
+
+app.get('/api/pelabuhan', isAuthenticated, (req, res) => {
+  fs.readFile(__dirname + '/pelabuhan.json', 'utf8', (err, data) => {
+    if (err) {
+      console.error("Error reading port data file:", err);
+      return res.status(500).json({ error: 'Gagal membaca data pelabuhan.' });
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.send(data);
+  });
+});
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, ()=> console.log('Server jalan di http://localhost:'+PORT))

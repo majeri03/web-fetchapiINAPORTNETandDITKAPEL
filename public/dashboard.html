@@ -22,7 +22,7 @@
 
 <div id="app" class="flex h-full">
 
-  <aside class="w-64 bg-white border-r border-ink-100 flex flex-col shrink-0">
+  <aside :class="isNavOpen ? 'w-64' : 'w-0'" class="transition-all duration-300 bg-white border-r border-ink-100 flex flex-col shrink-0 overflow-hidden">
     <div class="px-6 py-4 border-b border-ink-100 flex items-center gap-3">
       <div class="h-10 w-10 rounded-xl2 bg-ink-900 text-white grid place-content-center shadow-soft">DV</div>
       <div>
@@ -34,6 +34,7 @@
       <a href="#" @click.prevent="setActiveMenu('inaportnet')" :class="{'bg-ink-900 text-white': activeMenu === 'inaportnet', 'hover:bg-ink-100': activeMenu !== 'inaportnet'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>⚓</span><span>Inaportnet & Ditkapel</span></a>
       <a href="#" @click.prevent="setActiveMenu('ditkapel_search')" :class="{'bg-ink-900 text-white': activeMenu === 'ditkapel_search', 'hover:bg-ink-100': activeMenu !== 'ditkapel_search'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>🔍</span><span>Pencarian Ditkapel</span></a>
       <a href="#" @click.prevent="setActiveMenu('summary')" :class="{'bg-ink-900 text-white': activeMenu === 'summary', 'hover:bg-ink-100': activeMenu !== 'summary'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>📈</span><span>Ringkasan</span></a>
+      <a href="#" @click.prevent="setActiveMenu('port_list'); fetchPortList();" :class="{'bg-ink-900 text-white': activeMenu === 'port_list', 'hover:bg-ink-100': activeMenu !== 'port_list'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>📘</span><span>Daftar Pelabuhan</span></a>
       <a href="#" @click.prevent="setActiveMenu('history')" :class="{'bg-ink-900 text-white': activeMenu === 'history', 'hover:bg-ink-100': activeMenu !== 'history'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>💾</span><span>Riwayat Cache</span></a>
     </nav>
     <div class="p-4 border-t border-ink-100">
@@ -43,9 +44,19 @@
   </aside>
 
   <main class="flex-1 overflow-auto">
+    <div class="p-2 sticky top-0 bg-white/80 backdrop-blur-sm z-20 border-b lg:hidden">
+        <button @click="toggleNav" class="p-2 rounded-md hover:bg-ink-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
       <div v-if="activeMenu === 'inaportnet'">
+        <div v-if="currentDataInfo" class="mb-4 bg-blue-100 border border-blue-200 text-blue-800 text-sm font-semibold p-4 rounded-xl2 shadow-soft">
+        <p>{{ currentDataInfo }}</p>
+        </div>
         <data-filters
             v-model:form-port="form.port"
             v-model:form-jenis="form.jenis"
@@ -255,6 +266,34 @@
           <summary-view :company-summary="companySummary" @export-summary="exportSummaryExcel"></summary-view>
       </div>
       
+      <div v-if="activeMenu === 'port_list'">
+    <section class="bg-white shadow-soft rounded-xl2 border border-ink-100">
+        <div class="px-4 py-3 border-b">
+            <h1 class="text-xl font-bold">Daftar Kode Pelabuhan di Indonesia</h1>
+            <div class="mt-2">
+            <input v-model="portListSearch" type="text" placeholder="Cari berdasarkan kode atau nama pelabuhan..." class="w-full px-3 py-2 text-sm rounded-lg border border-ink-200">
+            </div>
+        </div>
+        <div class="overflow-auto scrollbar-thin">
+            <table class="min-w-full text-sm">
+                <thead class="bg-ink-50 border-y border-ink-100">
+                    <tr>
+                        <th class="text-left px-4 py-2 font-semibold">Kode</th>
+                        <th class="text-left px-4 py-2 font-semibold">Nama Pelabuhan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="port in filteredPortList" :key="port.code" class="border-b border-ink-100 hover:bg-ink-50/40">
+                        <td class="px-4 py-2 font-mono">{{ port.code }}</td>
+                        <td class="px-4 py-2 font-semibold">{{ port.name }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+  </div>
+
+
       <div v-if="activeMenu === 'history'">
         <section class="bg-white shadow-soft rounded-xl2 border border-ink-100 p-4">
             <h1 class="text-xl font-bold">Riwayat Pengambilan Data</h1>
@@ -329,7 +368,12 @@
     setup(){
         const s = reactive({
             userEmail: '',
+            activeCacheKey: null,
+            isNavOpen: true,
             activeMenu: 'inaportnet',
+            portList: [],
+            currentDataInfo: '',
+            portListSearch: '',
             form: {
                 port: 'IDPTL', jenis: 'dn', 
                 start_year: new Date().getFullYear(), start_month: new Date().getMonth() + 1, 
@@ -357,7 +401,9 @@
             columnFilterDropdownOpen: false,
             ditkapelColumnFilterOpen: false,
         });
-
+        const toggleNav = () => {
+            s.isNavOpen = !s.isNavOpen;
+        };
         auth.onAuthStateChanged(user => {
             if (user) { s.userEmail = user.email; } 
             else { window.location.href = '/login.html'; }
@@ -376,18 +422,76 @@
             index.push({ key, title, timestamp, rowCount: s.rows.length });
             saveHistoryIndex(index);
             loadHistory();
+            s.activeCacheKey = key;
+            localStorage.setItem('inaportnet_last_key', key);
         };
+        const updateActiveCache = () => {
+            if (!s.activeCacheKey) return; // Jangan lakukan apa-apa jika tidak ada cache aktif
 
-        const loadDataFromHistory = (key) => {
-            const cachedData = localStorage.getItem(key);
+            const cachedData = localStorage.getItem(s.activeCacheKey);
             if (cachedData) {
                 const data = JSON.parse(cachedData);
-                s.rows = data.rows || [];
-                s.columns = data.columns || [];
-                s.activeMenu = 'inaportnet';
-                alert(`Data dari riwayat "${s.history.find(h => h.key === key)?.title}" berhasil dimuat.`);
+                data.rows = s.rows;       // Perbarui baris data
+                data.columns = s.columns; // Perbarui struktur kolom
+                localStorage.setItem(s.activeCacheKey, JSON.stringify(data));
+
+                // Perbarui juga jumlah baris di daftar riwayat
+                const index = getHistoryIndex();
+                const historyItem = index.find(item => item.key === s.activeCacheKey);
+                if (historyItem) {
+                    historyItem.rowCount = s.rows.length;
+                    saveHistoryIndex(index);
+                    loadHistory(); // Muat ulang daftar riwayat
+                }
+                console.log('Cache berhasil diperbarui dengan data baru.');
             }
         };
+        const fetchPortList = async () => {
+            if (s.portList.length > 0) return; // Jangan fetch ulang jika sudah ada
+            try {
+                const response = await fetch('/api/pelabuhan');
+                if (!response.ok) throw new Error('Gagal mengambil daftar pelabuhan');
+                s.portList = await response.json();
+            } catch (error) {
+                console.error(error);
+                alert('Gagal memuat daftar pelabuhan.');
+            }
+        };
+        const loadDataFromHistory = (key, showAlert = true) => {
+          const cachedData = localStorage.getItem(key);
+          if (cachedData) {
+              const data = JSON.parse(cachedData);
+              s.rows = data.rows || [];
+              s.columns = data.columns || [];
+              s.filters = {};
+              s.columns.forEach(c => {
+                  s.filters[c.key] = [];
+              });
+              s.page.index = 1;
+              s.activeMenu = 'inaportnet';
+              // Simpan kunci cache yang aktif
+              s.activeCacheKey = key;
+              localStorage.setItem('inaportnet_last_key', key);
+              const historyItem = s.history.find(h => h.key === key);
+if (historyItem) {
+    const historyTitle = historyItem.title || '';
+    // Ekstrak kode dan periode dari judul riwayat
+    const portCodeMatch = historyTitle.match(/^[A-Z]{5}/);
+    const periodMatch = historyTitle.match(/\((.*)\)/);
+
+    const portCode = portCodeMatch ? portCodeMatch[0] : 'N/A';
+    const period = periodMatch ? periodMatch[1] : '';
+
+    const portData = s.portList.find(p => p.code === portCode);
+    const portName = portData ? portData.name : portCode;
+
+    s.currentDataInfo = `Menampilkan data dari riwayat: "${portName} (${portCode}) | Periode: ${period}"`;
+}
+              if (showAlert) {
+                  alert(`Data dari riwayat "${s.history.find(h => h.key === key)?.title}" berhasil dimuat.`);
+              }
+          }
+      };
 
         const deleteHistoryItem = (key) => {
             if (confirm('Apakah Anda yakin ingin menghapus data ini dari riwayat?')) {
@@ -401,8 +505,13 @@
         
         onMounted(() => {
             loadHistory();
+            fetchPortList();
             const lastMenu = localStorage.getItem('active_menu');
             if (lastMenu) s.activeMenu = lastMenu;
+            const lastKey = localStorage.getItem('inaportnet_last_key');
+            if (lastKey) {
+                loadDataFromHistory(lastKey, false); 
+            }
         });
 
         const setActiveMenu = (menu) => {
@@ -444,7 +553,12 @@
             setRows(res_headers, res_rows);
             const title = `${s.form.port} (${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year})`;
             saveDataToCache(title);
+            const portCode = s.form.port.toUpperCase();
+            const portData = s.portList.find(p => p.code === portCode);
+            const portName = portData ? portData.name : portCode; // Jika tidak ketemu, tampilkan kode
 
+            const jenisText = s.form.jenis === 'dn' ? 'Domestik' : 'Luar Negeri';
+            s.currentDataInfo = `Menampilkan data untuk Pelabuhan: ${portName} (${portCode}) - ${jenisText} | Periode: ${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year}`;
             alert(`${res_rows.length} baris data berhasil diambil & disimpan ke riwayat.`);
           } catch (e) {
             alert('Gagal mengambil data: ' + e.message);
@@ -484,6 +598,7 @@
             }
           }
           alert("Proses melengkapi data perusahaan selesai.");
+          updateActiveCache();
           s.loading = false; s.overlay = false; s.progress.show = false;
         };
 
@@ -534,6 +649,7 @@
           }
           
           alert("Proses melengkapi data dari Ditkapel selesai.");
+          updateActiveCache();
           s.loading = false; s.overlay = false; s.progress.show = false;
         };
         
@@ -565,7 +681,19 @@
                 return true;
             });
         });
+        const filteredPortList = computed(() => {
+            if (!s.portListSearch) {
+                return s.portList; // Jika tidak ada pencarian, tampilkan semua
+            }
+            const query = s.portListSearch.toLowerCase();
+            return s.portList.filter(port => {
+                // Cek di semua properti yang relevan
+                const nameMatch = port.name ? port.name.toLowerCase().includes(query) : false;
+                const codeMatch = port.code ? port.code.toLowerCase().includes(query) : false;
 
+                return codeMatch || nameMatch;
+            });
+        });
         const uniqueDitkapelValues = (key) => {
             const set = new Set(s.ditkapelResults.rows.map(r => (r[key] || '').toString().trim()));
             return Array.from(set).sort((a,b) => a.localeCompare(b));
@@ -809,6 +937,7 @@ const searchDitkapelBatch = async () => {
         return {
             ...toRefs(s),
             setActiveMenu,
+            toggleNav,
             fetchInaportnet, enrichPerusahaan, enrichDitkapel,
             handleLogout, lookupDitkapel,
             loadDataFromHistory, deleteHistoryItem,
@@ -826,6 +955,8 @@ const searchDitkapelBatch = async () => {
             pagedDitkapelRows,
             goDitkapelPage,
             visibleDitkapelColumns,
+            fetchPortList,
+            filteredPortList,
         }
     }
   }).mount('#app');

@@ -1,0 +1,1604 @@
+[
+  {
+    "code": "IDBLW",
+    "name": "BELAWAN",
+    "dalam": 9,
+    "luar": 10
+  },
+  {
+    "code": "IDJKT",
+    "name": "TANJUNG PRIOK",
+    "dalam": 67,
+    "luar": 30
+  },
+  {
+    "code": "IDSUB",
+    "name": "TANJUNG PERAK",
+    "dalam": 68,
+    "luar": 12
+  },
+  {
+    "code": "IDMAK",
+    "name": "MAKASSAR",
+    "dalam": 28,
+    "luar": 1
+  },
+  {
+    "code": "IDPNJ",
+    "name": "PANJANG",
+    "dalam": 38,
+    "luar": 3
+  },
+  {
+    "code": "IDBTN",
+    "name": "BANTEN",
+    "dalam": 79,
+    "luar": 13
+  },
+  {
+    "code": "IDDUM",
+    "name": "DUMAI",
+    "dalam": 59,
+    "luar": 28
+  },
+  {
+    "code": "IDSRG",
+    "name": "TANJUNG EMAS, SEMARANG",
+    "dalam": 21,
+    "luar": 7
+  },
+  {
+    "code": "IDBDJ",
+    "name": "BANJARMASIN",
+    "dalam": 280,
+    "luar": 6
+  },
+  {
+    "code": "IDBPN",
+    "name": "BALIKPAPAN",
+    "dalam": 214,
+    "luar": 7
+  },
+  {
+    "code": "IDBIT",
+    "name": "BITUNG",
+    "dalam": 13,
+    "luar": 2
+  },
+  {
+    "code": "IDAMQ",
+    "name": "AMBON",
+    "dalam": 23,
+    "luar": 1
+  },
+  {
+    "code": "IDSOQ",
+    "name": "SORONG",
+    "dalam": 41,
+    "luar": 0
+  },
+  {
+    "code": "IDTAN",
+    "name": "TANJUNG UBAN",
+    "dalam": 109,
+    "luar": 10
+  },
+  {
+    "code": "IDBII",
+    "name": "BAGAN SIAPI-API",
+    "dalam": 6,
+    "luar": 1
+  },
+  {
+    "code": "IDBKS",
+    "name": "BENGKULU",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDBOA",
+    "name": "BENOA",
+    "dalam": 255,
+    "luar": 0
+  },
+  {
+    "code": "IDCXP",
+    "name": "CILACAP",
+    "dalam": 11,
+    "luar": 2
+  },
+  {
+    "code": "IDCBN",
+    "name": "CIREBON",
+    "dalam": 9,
+    "luar": 1
+  },
+  {
+    "code": "IDGTO",
+    "name": "GORONTALO",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDDJJ",
+    "name": "JAYAPURA",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDKDI",
+    "name": "KENDARI",
+    "dalam": 32,
+    "luar": 0
+  },
+  {
+    "code": "IDKOE",
+    "name": "KUPANG",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDLSW",
+    "name": "LHOKSEUMAWE",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDLUW",
+    "name": "LUWUK",
+    "dalam": 36,
+    "luar": 0
+  },
+  {
+    "code": "IDMDC",
+    "name": "MANADO",
+    "dalam": 14,
+    "luar": 0
+  },
+  {
+    "code": "IDMKW",
+    "name": "MANOKWARI",
+    "dalam": 5,
+    "luar": 1
+  },
+  {
+    "code": "IDMKQ",
+    "name": "MERAUKE",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDPLM",
+    "name": "PALEMBANG",
+    "dalam": 81,
+    "luar": 9
+  },
+  {
+    "code": "IDPKU",
+    "name": "PEKANBARU",
+    "dalam": 49,
+    "luar": 6
+  },
+  {
+    "code": "IDPNK",
+    "name": "PONTIANAK",
+    "dalam": 62,
+    "luar": 5
+  },
+  {
+    "code": "IDSBG",
+    "name": "SABANG",
+    "dalam": 12,
+    "luar": 0
+  },
+  {
+    "code": "IDSRI",
+    "name": "SAMARINDA",
+    "dalam": 212,
+    "luar": 4
+  },
+  {
+    "code": "IDSMQ",
+    "name": "SAMPIT",
+    "dalam": 58,
+    "luar": 0
+  },
+  {
+    "code": "IDSLG",
+    "name": "SIBOLGA",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDTBR",
+    "name": "TELUK BAYUR",
+    "dalam": 18,
+    "luar": 2
+  },
+  {
+    "code": "IDTTE",
+    "name": "TERNATE",
+    "dalam": 31,
+    "luar": 0
+  },
+  {
+    "code": "IDTNJ",
+    "name": "TANJUNG PINANG",
+    "dalam": 54,
+    "luar": 15
+  },
+  {
+    "code": "IDTUA",
+    "name": "TUAL",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDTRK",
+    "name": "TARAKAN",
+    "dalam": 84,
+    "luar": 3
+  },
+  {
+    "code": "IDPTL",
+    "name": "TELUK PALU",
+    "dalam": 31,
+    "luar": 0
+  },
+  {
+    "code": "IDPAP",
+    "name": "PARE-PARE",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDKUM",
+    "name": "KUMAI",
+    "dalam": 14,
+    "luar": 2
+  },
+  {
+    "code": "IDGRE",
+    "name": "GRESIK",
+    "dalam": 50,
+    "luar": 5
+  },
+  {
+    "code": "IDAHI",
+    "name": "AMAHAI",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDAPN",
+    "name": "AMPANA",
+    "dalam": 44,
+    "luar": 0
+  },
+  {
+    "code": "IDTZD",
+    "name": "AMURANG",
+    "dalam": 3,
+    "luar": 1
+  },
+  {
+    "code": "IDBXD",
+    "name": "BADE",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDNDA",
+    "name": "BANDANAIRA",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDBGG",
+    "name": "BANGGAI",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDBJU",
+    "name": "BANYUWANGI /TANJUNG WANGI",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDBTM",
+    "name": "BATAM",
+    "dalam": 254,
+    "luar": 378
+  },
+  {
+    "code": "IDBTG",
+    "name": "BATANG",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDBEN",
+    "name": "BENETE",
+    "dalam": 99,
+    "luar": 0
+  },
+  {
+    "code": "IDBKI",
+    "name": "BENGKALIS",
+    "dalam": 20,
+    "luar": 8
+  },
+  {
+    "code": "IDBIK",
+    "name": "BIAK",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDBMU",
+    "name": "BIMA",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDNTI",
+    "name": "BINTUNI",
+    "dalam": 12,
+    "luar": 1
+  },
+  {
+    "code": "IDBUI",
+    "name": "BULI",
+    "dalam": 16,
+    "luar": 0
+  },
+  {
+    "code": "IDBXT",
+    "name": "BONTANG",
+    "dalam": 18,
+    "luar": 2
+  },
+  {
+    "code": "IDBUA",
+    "name": "BULA",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDBYQ",
+    "name": "BUNYU",
+    "dalam": 28,
+    "luar": 1
+  },
+  {
+    "code": "IDCLG",
+    "name": "CALANG",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDCEB",
+    "name": "CELUKAN BAWANG",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDDAS",
+    "name": "DABO, SINGKEP ISL",
+    "dalam": 20,
+    "luar": 0
+  },
+  {
+    "code": "IDDAR",
+    "name": "DARUBA",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDDOB",
+    "name": "DOBO",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDENE",
+    "name": "ENDE",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDFKQ",
+    "name": "FAK FAK",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDGIL",
+    "name": "GILIMANUK, BALI",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDGNS",
+    "name": "GUNUNG SITOLI",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDDJB",
+    "name": "TALANG DUKUH",
+    "dalam": 20,
+    "luar": 8
+  },
+  {
+    "code": "IDJEP",
+    "name": "JEPARA",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDKNG",
+    "name": "KAIMANA",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDKBH",
+    "name": "KALABAHI",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDKAT",
+    "name": "KALIANGET",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDKDW",
+    "name": "KENDAWANGAN",
+    "dalam": 21,
+    "luar": 0
+  },
+  {
+    "code": "IDKTG",
+    "name": "KETAPANG",
+    "dalam": 16,
+    "luar": 0
+  },
+  {
+    "code": "IDKID",
+    "name": "KIJANG",
+    "dalam": 31,
+    "luar": 4
+  },
+  {
+    "code": "IDKOL",
+    "name": "KOLAKA",
+    "dalam": 42,
+    "luar": 0
+  },
+  {
+    "code": "IDKNL",
+    "name": "KOLONODALE",
+    "dalam": 60,
+    "luar": 1
+  },
+  {
+    "code": "IDKBU",
+    "name": "KOTABARU - BATULICIN",
+    "dalam": 71,
+    "luar": 2
+  },
+  {
+    "code": "IDENO",
+    "name": "KUALA ENOK",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDKUA",
+    "name": "KUALA LANGSA",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDKTJ",
+    "name": "KUALATANJUNG",
+    "dalam": 1,
+    "luar": 3
+  },
+  {
+    "code": "IDKTK",
+    "name": "KUALA TUNGKAL",
+    "dalam": 16,
+    "luar": 0
+  },
+  {
+    "code": "IDLBO",
+    "name": "LABUAN BAJO",
+    "dalam": 332,
+    "luar": 0
+  },
+  {
+    "code": "IDLAJ",
+    "name": "LABUHAN",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDLKA",
+    "name": "LARANTUKA",
+    "dalam": 51,
+    "luar": 0
+  },
+  {
+    "code": "IDLWE",
+    "name": "LEWOLEBA",
+    "dalam": 23,
+    "luar": 0
+  },
+  {
+    "code": "IDMAJ",
+    "name": "MAJENE, SV",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDMLH",
+    "name": "MALAHAYATI",
+    "dalam": 17,
+    "luar": 0
+  },
+  {
+    "code": "IDMLI",
+    "name": "MALILI",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDMJU",
+    "name": "MAMUJU",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDMAN",
+    "name": "MANGGAR",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDMSI",
+    "name": "MASALEMBO",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDMOF",
+    "name": "MAUMERE",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDMEQ",
+    "name": "MEULABOH",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDMSK",
+    "name": "MUARA SABAK",
+    "dalam": 7,
+    "luar": 1
+  },
+  {
+    "code": "IDMSB",
+    "name": "MUARA SIBERUT",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDLII",
+    "name": "LAIWUI",
+    "dalam": 41,
+    "luar": 2
+  },
+  {
+    "code": "IDMUO",
+    "name": "MUNTOK",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDNBX",
+    "name": "NABIRE",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDNAM",
+    "name": "NAMLEA",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDNRE",
+    "name": "NAMROLE",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDNNX",
+    "name": "NUNUKAN",
+    "dalam": 14,
+    "luar": 8
+  },
+  {
+    "code": "IDORA",
+    "name": "ORANSBARI",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDPGM",
+    "name": "PAGIMANA",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDPPO",
+    "name": "PALOPO, SULAWESI",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPRN",
+    "name": "PANARUKAN",
+    "dalam": 18,
+    "luar": 0
+  },
+  {
+    "code": "IDPGX",
+    "name": "PANGKAL BALAM, BANGKA",
+    "dalam": 21,
+    "luar": 2
+  },
+  {
+    "code": "IDPKS",
+    "name": "PANGKALAN SUSU",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDPKN",
+    "name": "PANGKALAN BUN",
+    "dalam": 2,
+    "luar": 1
+  },
+  {
+    "code": "IDPBB",
+    "name": "BADAS",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDPMK",
+    "name": "POMAKO",
+    "dalam": 4,
+    "luar": 2
+  },
+  {
+    "code": "IDPUM",
+    "name": "POMALAA, SULAWESI",
+    "dalam": 16,
+    "luar": 0
+  },
+  {
+    "code": "IDPSJ",
+    "name": "POSO, SULAWESI",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPRO",
+    "name": "PROBOLINGGO",
+    "dalam": 12,
+    "luar": 1
+  },
+  {
+    "code": "IDPPS",
+    "name": "PULANG PISAU/KUALA KAPUAS",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDRAQ",
+    "name": "RAHA",
+    "dalam": 12,
+    "luar": 0
+  },
+  {
+    "code": "IDREM",
+    "name": "REMBANG",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDRGT",
+    "name": "KUALA CINAKU",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDREO",
+    "name": "REO",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDSQN",
+    "name": "SANANA",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDSGQ",
+    "name": "SANGATTA",
+    "dalam": 17,
+    "luar": 4
+  },
+  {
+    "code": "IDSKI",
+    "name": "SANGKULIRANG, KALIMANTAN",
+    "dalam": 20,
+    "luar": 3
+  },
+  {
+    "code": "IDSPE",
+    "name": "SAPE",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDZRM",
+    "name": "SARMI",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDSTU",
+    "name": "SATUI",
+    "dalam": 34,
+    "luar": 3
+  },
+  {
+    "code": "IDSXK",
+    "name": "SAUMLAKI",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDSPA",
+    "name": "SELAT PANJANG",
+    "dalam": 72,
+    "luar": 4
+  },
+  {
+    "code": "IDZRI",
+    "name": "SERUI",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDSNG",
+    "name": "SINABANG",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDSUQ",
+    "name": "SUNGAI GUNTUNG, SUMATRA",
+    "dalam": 59,
+    "luar": 0
+  },
+  {
+    "code": "IDSKT",
+    "name": "SAKETA",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDSUS",
+    "name": "SUSOH, SUMATRA",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDTJB",
+    "name": "TANJUNG BALAI KARIMUN",
+    "dalam": 491,
+    "luar": 48
+  },
+  {
+    "code": "IDTJQ",
+    "name": "TANJUNG PANDAN",
+    "dalam": 14,
+    "luar": 0
+  },
+  {
+    "code": "IDTSX",
+    "name": "TANJUNG SANTAN",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDTJS",
+    "name": "TANJUNG SELOR",
+    "dalam": 19,
+    "luar": 0
+  },
+  {
+    "code": "IDTPK",
+    "name": "TAPAKTUAN, SUMATRA",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDTEG",
+    "name": "TEGAL",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDTMO",
+    "name": "TELOK MELANO",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDTXM",
+    "name": "TEMINABUAN",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDTBO",
+    "name": "TOBELO",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDTLI",
+    "name": "TOLITOLI",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDTLU",
+    "name": "TULEHU",
+    "dalam": 12,
+    "luar": 0
+  },
+  {
+    "code": "IDWGP",
+    "name": "WAINGAPU",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDWSR",
+    "name": "WASIOR",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDWED",
+    "name": "WEDA",
+    "dalam": 49,
+    "luar": 5
+  },
+  {
+    "code": "IDAGS",
+    "name": "Agats",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDAGK",
+    "name": "ANGGREK",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDAAU",
+    "name": "Atapupu",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDBAE",
+    "name": "Bajoe",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDBAI",
+    "name": "BAKAUHENI",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDBAA",
+    "name": "Baranusa",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDBRS",
+    "name": "Barus",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDBWN",
+    "name": "Bawean",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDBBM",
+    "name": "Belang-Belang",
+    "dalam": 12,
+    "luar": 3
+  },
+  {
+    "code": "IDLBI",
+    "name": "Bintuhan/Linau",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDBBE",
+    "name": "Bulukumba/Lappe'e",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDGER",
+    "name": "Geser",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDHUU",
+    "name": "Hatu Piru",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDIRU",
+    "name": "Indramayu",
+    "dalam": 13,
+    "luar": 0
+  },
+  {
+    "code": "IDJIO",
+    "name": "Jailolo",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDJEO",
+    "name": "Jeneponto/Bunging",
+    "dalam": 8,
+    "luar": 0
+  },
+  {
+    "code": "IDJWA",
+    "name": "Juwana",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDKNU",
+    "name": "Karangantu",
+    "dalam": 11,
+    "luar": 0
+  },
+  {
+    "code": "IDKGQ",
+    "name": "KUALA GAUNG",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDKJA",
+    "name": "Karimun Jawa",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDKNP",
+    "name": "KINTAP",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDKRO",
+    "name": "Korido",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDKAG",
+    "name": "Kota Agung",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDKAN",
+    "name": "Kotabunan",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDKME",
+    "name": "Kuala Mendahara",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDKSA",
+    "name": "Kuala Semboja",
+    "dalam": 88,
+    "luar": 0
+  },
+  {
+    "code": "IDKSB",
+    "name": "KEPULAUAN SERIBU",
+    "dalam": 18,
+    "luar": 1
+  },
+  {
+    "code": "IDKWG",
+    "name": "Kwandang",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDLLO",
+    "name": "Labuhan Lombok",
+    "dalam": 103,
+    "luar": 0
+  },
+  {
+    "code": "IDLMA",
+    "name": "Labuhan Maringgai",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDLUK",
+    "name": "Labuhan Uki",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDLHA",
+    "name": "Lahewa",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDLPO",
+    "name": "Lapuko",
+    "dalam": 44,
+    "luar": 0
+  },
+  {
+    "code": "IDLEK",
+    "name": "Leok",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDLUG",
+    "name": "Likupang",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDMII",
+    "name": "Maccini Baji",
+    "dalam": 21,
+    "luar": 1
+  },
+  {
+    "code": "IDMKI",
+    "name": "Malakoni/P. Enggano",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDMGA",
+    "name": "Manggala/Menggala",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDMOT",
+    "name": "Marapokot",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDMRA",
+    "name": "Marunda",
+    "dalam": 66,
+    "luar": 1
+  },
+  {
+    "code": "IDMLW",
+    "name": "Molawe",
+    "dalam": 90,
+    "luar": 2
+  },
+  {
+    "code": "IDMKA",
+    "name": "Muara Angke",
+    "dalam": 12,
+    "luar": 0
+  },
+  {
+    "code": "IDBRO",
+    "name": "BAA",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDNPE",
+    "name": "Nusa Penida (Mentigi)",
+    "dalam": 383,
+    "luar": 0
+  },
+  {
+    "code": "IDOOS",
+    "name": "Ogoamas",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDBUT",
+    "name": "TANJUNG BUTON",
+    "dalam": 60,
+    "luar": 1
+  },
+  {
+    "code": "IDPJA",
+    "name": "PULAU JAMPEA",
+    "dalam": 1,
+    "luar": 0
+  },
+  {
+    "code": "IDPBI",
+    "name": "PADANG BAI",
+    "dalam": 73,
+    "luar": 0
+  },
+  {
+    "code": "IDPAH",
+    "name": "Paloh/Sakura",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPAN",
+    "name": "Pangandaran",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPIN",
+    "name": "Panipahan",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDPRI",
+    "name": "Parigi",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPIO",
+    "name": "Pattirobajo",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPRA",
+    "name": "Pelabuhan Ratu",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDPTE",
+    "name": "Pulau Tello",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDRGG",
+    "name": "Rangga Ilung",
+    "dalam": 99,
+    "luar": 0
+  },
+  {
+    "code": "IDSPN",
+    "name": "Sapeken",
+    "dalam": 15,
+    "luar": 0
+  },
+  {
+    "code": "IDSPI",
+    "name": "Sapudi",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDSEA",
+    "name": "Seba",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDSAG",
+    "name": "Senayang",
+    "dalam": 15,
+    "luar": 0
+  },
+  {
+    "code": "IDSIK",
+    "name": "SIKAKAP",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDSNL",
+    "name": "Singkil",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDSLA",
+    "name": "Sinjai/Larea-rea",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDSNE",
+    "name": "Sintete",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDSRU",
+    "name": "Sirombu",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDSWA",
+    "name": "Siwa/Bangsalae",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDSFI",
+    "name": "Sofifi",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDSAA",
+    "name": "Sukamara",
+    "dalam": 6,
+    "luar": 0
+  },
+  {
+    "code": "IDSLU",
+    "name": "Sungai Lumpur",
+    "dalam": 25,
+    "luar": 4
+  },
+  {
+    "code": "IDSNY",
+    "name": "Sungai Nyamuk",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDTHA",
+    "name": "TAHUNA",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDTSH",
+    "name": "TANJUNG BALAI ASAHAN",
+    "dalam": 1,
+    "luar": 9
+  },
+  {
+    "code": "IDTBE",
+    "name": "Tanjung Beringin",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDTMD",
+    "name": "Tanjung Medang",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDTRE",
+    "name": "Tanjung Redep",
+    "dalam": 29,
+    "luar": 0
+  },
+  {
+    "code": "IDPEI",
+    "name": "Tanjung Silopo/Polewali",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDTGU",
+    "name": "Telaga Biru",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDTDA",
+    "name": "Teluk Dalam",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDLIG",
+    "name": "Teluk Leidong",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDSEL",
+    "name": "Tg. Sarang Elang",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDTAA",
+    "name": "Tilamuta",
+    "dalam": 5,
+    "luar": 1
+  },
+  {
+    "code": "IDUSI",
+    "name": "Ulu Siau",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDWIO",
+    "name": "Waikelo",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDWSA",
+    "name": "WAISAI",
+    "dalam": 13,
+    "luar": 0
+  },
+  {
+    "code": "IDWCI",
+    "name": "WANCI",
+    "dalam": 14,
+    "luar": 0
+  },
+  {
+    "code": "IDWII",
+    "name": "Wini",
+    "dalam": 0,
+    "luar": 1
+  },
+  {
+    "code": "IDWNI",
+    "name": "Wonreli",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDSLR",
+    "name": "SELAYAR",
+    "dalam": 9,
+    "luar": 0
+  },
+  {
+    "code": "IDLBH",
+    "name": "BABANG",
+    "dalam": 17,
+    "luar": 0
+  },
+  {
+    "code": "IDSKL",
+    "name": "SUNDA KELAPA",
+    "dalam": 19,
+    "luar": 0
+  },
+  {
+    "code": "IDMSJ",
+    "name": "MESUJI",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDGNG",
+    "name": "GARONGKONG",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDWRN",
+    "name": "WAREN",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDTLN",
+    "name": "TEMBILAHAN",
+    "dalam": 31,
+    "luar": 0
+  },
+  {
+    "code": "IDBNQ",
+    "name": "BRONDONG",
+    "dalam": 38,
+    "luar": 3
+  },
+  {
+    "code": "IDSON",
+    "name": "SIUBAN",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDPTA",
+    "name": "Padang tikar",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDPMB",
+    "name": "PATIMBAN",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "PUSAT",
+    "name": "Kementerian Perhubungan",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "XXOGA",
+    "name": "KEMENTERIAN / LEMBAGA LAIN",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDLBR",
+    "name": "LEMBAR",
+    "dalam": 18,
+    "luar": 0
+  },
+  {
+    "code": "IDBAU",
+    "name": "BAU-BAU",
+    "dalam": 30,
+    "luar": 1
+  },
+  {
+    "code": "IDSNP",
+    "name": "BRANTA/SUMENEP",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDTMP",
+    "name": "TAREMPA",
+    "dalam": 35,
+    "luar": 0
+  },
+  {
+    "code": "IDSIO",
+    "name": "SOASIO, GALELA",
+    "dalam": 2,
+    "luar": 0
+  },
+  {
+    "code": "IDSDI",
+    "name": "Sadai",
+    "dalam": 4,
+    "luar": 0
+  },
+  {
+    "code": "IDMEN",
+    "name": "PEMENANG",
+    "dalam": 84,
+    "luar": 0
+  },
+  {
+    "code": "IDTHR",
+    "name": "TANA PASER",
+    "dalam": 6,
+    "luar": 2
+  },
+  {
+    "code": "IDBNU",
+    "name": "BUNGKU",
+    "dalam": 129,
+    "luar": 14
+  },
+  {
+    "code": "IDBUD",
+    "name": "BUNTA",
+    "dalam": 5,
+    "luar": 0
+  },
+  {
+    "code": "IDCLI",
+    "name": "CALABAI",
+    "dalam": 3,
+    "luar": 0
+  },
+  {
+    "code": "IDBTX",
+    "name": "Batahan",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDMGE",
+    "name": "Melonguane",
+    "dalam": 10,
+    "luar": 0
+  },
+  {
+    "code": "IDTTN",
+    "name": "TELUK SIGINTUNG",
+    "dalam": 0,
+    "luar": 0
+  },
+  {
+    "code": "IDKKS",
+    "name": "KOKAS",
+    "dalam": 7,
+    "luar": 0
+  },
+  {
+    "code": "IDNIJ",
+    "name": "NIPAH PANJANG",
+    "dalam": 12,
+    "luar": 0
+  },
+  {
+    "code": "IDSSL",
+    "name": "SUNGAI SELAN",
+    "dalam": 0,
+    "luar": 0
+  }
+]
