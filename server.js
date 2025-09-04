@@ -8,7 +8,9 @@ const app = express();
 app.use(express.json()); // <-- BARU: Untuk membaca body JSON dari request
 
 // --- INISIALISASI FIREBASE ADMIN ---
-const serviceAccount = require('./service-account-key.json');
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  : require('./service-account-key.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
