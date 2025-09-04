@@ -35,6 +35,7 @@
       <a href="#" @click.prevent="setActiveMenu('ditkapel_search')" :class="{'bg-ink-900 text-white': activeMenu === 'ditkapel_search', 'hover:bg-ink-100': activeMenu !== 'ditkapel_search'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>🔍</span><span>Pencarian Ditkapel</span></a>
       <a href="#" @click.prevent="setActiveMenu('summary')" :class="{'bg-ink-900 text-white': activeMenu === 'summary', 'hover:bg-ink-100': activeMenu !== 'summary'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>📈</span><span>Ringkasan</span></a>
       <a href="#" @click.prevent="setActiveMenu('port_list'); fetchPortList();" :class="{'bg-ink-900 text-white': activeMenu === 'port_list', 'hover:bg-ink-100': activeMenu !== 'port_list'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>📘</span><span>Daftar Pelabuhan</span></a>
+      <a href="#" @click.prevent="setActiveMenu('ranks_global')" :class="{'bg-ink-900 text-white': activeMenu === 'ranks_global', 'hover:bg-ink-100': activeMenu !== 'ranks_global'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>🌐</span><span>Peringkat Global</span></a>
       <a href="#" @click.prevent="setActiveMenu('history')" :class="{'bg-ink-900 text-white': activeMenu === 'history', 'hover:bg-ink-100': activeMenu !== 'history'}" class="flex items-center gap-3 px-3 py-2 rounded-lg"><span>💾</span><span>Riwayat Cache</span></a>
     </nav>
     <div class="p-4 border-t border-ink-100">
@@ -293,7 +294,9 @@
     </section>
   </div>
 
-
+    <div v-if="activeMenu === 'ranks_global'">
+    <ranks-global-view :ranked-data="globalRanks.data" :loading="globalRanks.loading"></ranks-global-view>
+</div>
       <div v-if="activeMenu === 'history'">
         <section class="bg-white shadow-soft rounded-xl2 border border-ink-100 p-4">
           <h1 class="text-xl font-bold">Riwayat Pengambilan Data</h1>
@@ -343,6 +346,11 @@
           <div class="w-full bg-ink-100 rounded-full h-2.5"><div class="bg-ink-800 h-2.5 rounded-full" :style="{ width: (progress.current / progress.total * 100) + '%' }"></div></div>
           <div class="text-xs text-center text-ink-600 mt-1">{{ progress.current }} / {{ progress.total }}</div>
         </div>
+        <div class="mt-4 text-center">
+            <button @click="cancelFetchProcess" class="px-4 py-2 text-xs rounded-lg border border-red-200 text-red-700 hover:bg-red-50">
+                Batalkan
+            </button>
+        </div>
       </div>
     </div>
   </transition>
@@ -361,7 +369,7 @@
   import DataFilters from './components/DataFilters.js';
   import DataTable from './components/DataTable.js';
   import SummaryView from './components/SummaryView.js';
-
+  import RanksGlobalView from './components/RanksGlobalView.js';
   const { createApp, reactive, computed, toRefs, onMounted, watch } = Vue;
 
   const firebaseConfig = {
@@ -376,13 +384,14 @@
   const auth = firebase.auth();
   
   createApp({
-    components: { DataFilters, DataTable, SummaryView },
+    components: { DataFilters, DataTable, SummaryView,RanksGlobalView },
     setup(){
         const s = reactive({
             userEmail: '',
             activeCacheKey: null,
             isNavOpen: true,
             activeMenu: 'inaportnet',
+            fetchController: null,
             portList: [],
             currentDataInfo: '',
             portListSearch: '',
@@ -396,6 +405,7 @@
             history: [],
             historySearch: '',     
             historySort: 'newest',
+            globalRanks: { data: [], loading: false },
             loading: false,
             overlay: false,
             overlayMsg: '',
@@ -487,25 +497,25 @@
               s.activeCacheKey = key;
               localStorage.setItem('inaportnet_last_key', key);
               const historyItem = s.history.find(h => h.key === key);
-if (historyItem) {
-    const historyTitle = historyItem.title || '';
-    // Ekstrak kode dan periode dari judul riwayat
-    const portCodeMatch = historyTitle.match(/^[A-Z]{5}/);
-    const periodMatch = historyTitle.match(/\((.*)\)/);
+                if (historyItem) {
+                    const historyTitle = historyItem.title || '';
+                    // Ekstrak kode dan periode dari judul riwayat
+                    const portCodeMatch = historyTitle.match(/^[A-Z]{5}/);
+                    const periodMatch = historyTitle.match(/\((.*)\)/);
 
-    const portCode = portCodeMatch ? portCodeMatch[0] : 'N/A';
-    const period = periodMatch ? periodMatch[1] : '';
+                    const portCode = portCodeMatch ? portCodeMatch[0] : 'N/A';
+                    const period = periodMatch ? periodMatch[1] : '';
 
-    const portData = s.portList.find(p => p.code === portCode);
-    const portName = portData ? portData.name : portCode;
+                    const portData = s.portList.find(p => p.code === portCode);
+                    const portName = portData ? portData.name : portCode;
 
-    s.currentDataInfo = `Menampilkan data dari riwayat: "${portName} (${portCode}) | Periode: ${period}"`;
-}
-              if (showAlert) {
-                  alert(`Data dari riwayat "${s.history.find(h => h.key === key)?.title}" berhasil dimuat.`);
-              }
-          }
-      };
+                    s.currentDataInfo = `Menampilkan data dari riwayat: "${portName} (${portCode}) | Periode: ${period}"`;
+                }
+                            if (showAlert) {
+                                alert(`Data dari riwayat "${s.history.find(h => h.key === key)?.title}" berhasil dimuat.`);
+                            }
+                        }
+                    };
 
         const deleteHistoryItem = (key) => {
             if (confirm('Apakah Anda yakin ingin menghapus data ini dari riwayat?')) {
@@ -527,12 +537,34 @@ if (historyItem) {
                 loadDataFromHistory(lastKey, false); 
             }
         });
-
+        const fetchGlobalRanks = async () => {
+            if (s.globalRanks.data.length > 0) return; // Jangan fetch ulang jika sudah ada
+            s.globalRanks.loading = true;
+            try {
+                const response = await fetch('/api/ranks/global');
+                if (!response.ok) throw new Error('Gagal mengambil data peringkat dari server.');
+                const data = await response.json();
+                s.globalRanks.data = data;
+            } catch (error) {
+                alert(error.message);
+                console.error(error);
+            } finally {
+                s.globalRanks.loading = false;
+            }
+        };
         const setActiveMenu = (menu) => {
             s.activeMenu = menu;
             localStorage.setItem('active_menu', menu);
+            if (menu === 'ranks_global') {
+                fetchGlobalRanks();
+            }
         };
-        
+        const cancelFetchProcess = () => {
+            if (s.fetchController) {
+                s.fetchController.abort();
+                console.log("Proses diminta untuk berhenti.");
+            }
+        };
         const setRows = (headers, arr) => {
             s.columns = headers.map(h => ({ key: h, label: h, visible: true }));
             s.rows = arr.map(r => { const o = {}; s.columns.forEach(c => o[c.key] = r[c.key] ?? ''); return o; });
@@ -542,49 +574,76 @@ if (historyItem) {
         };
 
         const fetchInaportnet = async () => {
-          s.loading = true; s.overlay = true; s.overlayMsg = 'Mengambil data...';
-          try {
+        s.loading = true; s.overlay = true; s.overlayMsg = 'Mengambil data...';
+        s.fetchController = new AbortController(); // <-- BUAT CONTROLLER BARU
+        const signal = s.fetchController.signal; // <-- AMBIL SINYALNYA
+        try {
+            // 1. Buat judul berdasarkan form untuk pengecekan
+            const title = `${s.form.port.toUpperCase()} (${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year})`;
+
+            // 2. Cek apakah riwayat dengan judul yang sama sudah ada
+            const existingHistoryItem = s.history.find(item => item.title === title);
+
             const params = new URLSearchParams({
-              port: s.form.port, jenis: s.form.jenis,
-              start_year: s.form.start_year, start_month: s.form.start_month,
-              end_year: s.form.end_year, end_month: s.form.end_month,
+            port: s.form.port, jenis: s.form.jenis,
+            start_year: s.form.start_year, start_month: s.form.start_month,
+            end_year: s.form.end_year, end_month: s.form.end_month,
             });
-            const r = await fetch(`/api/list?${params.toString()}`);
-             if (r.status === 401) {
+            const r = await fetch(`/api/list?${params.toString()}`,{ signal });
+            if (r.status === 401) {
                 alert("Sesi Anda telah berakhir. Harap login kembali.");
                 window.location.href = '/login.html';
                 return;
             }
             if (!r.ok) throw new Error(`Server merespons: ${(await r.json()).error}`);
-            
+
             const j = await r.json();
             const res_headers = ["Nomor PKK", "Nama Kapal", "Nama Perusahaan", "Jenis Trayek", "Asal (Kedatangan)", "Tujuan (Keberangkatan)"];
             const res_rows = (j.data || []).map(d => ({
-              "Nomor PKK": d.nomor_pkk || '', "Nama Kapal": d.nama_kapal || '', "Nama Perusahaan": "",
-              "Jenis Trayek": (d.trayek_berangkat || d.trayek_datang || ''), "Asal (Kedatangan)": "", "Tujuan (Keberangkatan)": ""
+            "Nomor PKK": d.nomor_pkk || '', "Nama Kapal": d.nama_kapal || '', "Nama Perusahaan": "",
+            "Jenis Trayek": (d.trayek_berangkat || d.trayek_datang || ''), "Asal (Kedatangan)": "", "Tujuan (Keberangkatan)": ""
             }));
-            
+
             setRows(res_headers, res_rows);
-            const title = `${s.form.port} (${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year})`;
+
+            // 3. Logika pintar: Perbarui atau Buat Baru
+            if (existingHistoryItem) {
+            // Jika sudah ada, atur sebagai cache aktif lalu perbarui
+            s.activeCacheKey = existingHistoryItem.key;
+            localStorage.setItem('inaportnet_last_key', existingHistoryItem.key);
+            updateActiveCache();
+            alert(`Data untuk "${title}" berhasil diperbarui dari server.`);
+            } else {
+            // Jika belum ada, buat cache baru
             saveDataToCache(title);
+            alert(`${res_rows.length} baris data berhasil diambil & disimpan sebagai riwayat baru.`);
+            }
+
+            // Perbarui juga info panel
             const portCode = s.form.port.toUpperCase();
             const portData = s.portList.find(p => p.code === portCode);
-            const portName = portData ? portData.name : portCode; // Jika tidak ketemu, tampilkan kode
-
+            const portName = portData ? portData.name : portCode;
             const jenisText = s.form.jenis === 'dn' ? 'Domestik' : 'Luar Negeri';
             s.currentDataInfo = `Menampilkan data untuk Pelabuhan: ${portName} (${portCode}) - ${jenisText} | Periode: ${s.form.start_month}/${s.form.start_year} - ${s.form.end_month}/${s.form.end_year}`;
-            alert(`${res_rows.length} baris data berhasil diambil & disimpan ke riwayat.`);
-          } catch (e) {
+
+        } catch (e) {
+            if (e.name === 'AbortError') { // <-- CEK JIKA DIBATALKAN
+            alert('Pengambilan data dibatalkan.');
+            } else {
             alert('Gagal mengambil data: ' + e.message);
-          } finally {
-            s.loading = false; s.overlay = false;
-          }
+            }
+        } finally {
+            s.loading = false; s.overlay = false; s.fetchController = null;
+        }
         };
 
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
         const enrichPerusahaan = async () => {
           const tasks = s.rows.filter(row => row["Nomor PKK"] && !row["Nama Perusahaan"]);
+          s.fetchController = new AbortController(); // <-- BUAT CONTROLLER BARU
+          const signal = s.fetchController.signal;
+          let wasCancelled = false;
           if (tasks.length === 0) { alert("Semua baris yang memungkinkan sudah memiliki Nama Perusahaan."); return; }
           
           s.progress = { current: 0, total: tasks.length, show: true };
@@ -592,9 +651,13 @@ if (historyItem) {
           s.loading = true;
 
           for (const row of tasks) {
+            if (signal.aborted) { // <-- Cek sinyal di setiap loop
+                wasCancelled = true;
+                break;
+            }
             try {
               const pkk = row["Nomor PKK"];
-              const response = await fetch(`/api/detail?nomor_pkk=${encodeURIComponent(pkk)}`);
+              const response = await fetch(`/api/detail?nomor_pkk=${encodeURIComponent(pkk)}`, { signal });
               if (response.ok) {
                 const j = await response.json();
                 const originalIndex = s.rows.findIndex(r => r["Nomor PKK"] === pkk);
@@ -605,13 +668,18 @@ if (historyItem) {
                 }
               }
             } catch (e) { 
+              if (e.name === 'AbortError') { wasCancelled = true; break; }
               console.error(`Gagal memproses PKK ${row["Nomor PKK"]}:`, e);
             } finally {
               s.progress.current++;
               await sleep(200);
             }
           }
-          alert("Proses melengkapi data perusahaan selesai.");
+          if (wasCancelled) {
+                alert("Proses melengkapi data dibatalkan oleh pengguna.");
+            } else {
+                alert("Proses melengkapi data perusahaan selesai.");
+            }
           updateActiveCache();
           s.loading = false; s.overlay = false; s.progress.show = false;
         };
@@ -622,7 +690,9 @@ if (historyItem) {
             alert("Semua data kapal yang memungkinkan sudah dilengkapi dari Ditkapel."); 
             return; 
           }
-          
+          s.fetchController = new AbortController(); // <-- BUAT CONTROLLER BARU
+          const signal = s.fetchController.signal;
+          let wasCancelled = false;
           s.progress = { current: 0, total: tasks.length, show: true };
           s.overlay = true; s.overlayMsg = `Melengkapi ${tasks.length} data kapal...`;
           s.loading = true;
@@ -636,9 +706,13 @@ if (historyItem) {
           });
 
           for (const row of tasks) {
+            if (signal.aborted) { // <-- Cek sinyal di setiap loop
+                wasCancelled = true;
+                break;
+            }
             try {
               const namaKapal = row['Nama Kapal'];
-              const response = await fetch(`/api/kapal?nama=${encodeURIComponent(namaKapal)}`);
+              const response = await fetch(`/api/kapal?nama=${encodeURIComponent(namaKapal)}`, { signal });
               
               if (response.ok) {
                 const json = await response.json();
@@ -655,14 +729,18 @@ if (historyItem) {
                 }
               }
             } catch (e) { 
+                if (e.name === 'AbortError') { wasCancelled = true; break; }
               console.error(`Gagal memproses kapal ${row["Nama Kapal"]}:`, e);
             } finally {
                 s.progress.current++;
                 await sleep(250);
             }
           }
-          
-          alert("Proses melengkapi data dari Ditkapel selesai.");
+          if (wasCancelled) {
+                alert("Proses melengkapi data dibatalkan.");
+            } else {
+                alert("Proses melengkapi data dari Ditkapel selesai.");
+            }
           updateActiveCache();
           s.loading = false; s.overlay = false; s.progress.show = false;
         };
@@ -997,6 +1075,8 @@ const searchDitkapelBatch = async () => {
             fetchPortList,
             filteredPortList,
             filteredHistory,
+            cancelFetchProcess,
+            fetchGlobalRanks,
         }
     }
   }).mount('#app');

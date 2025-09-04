@@ -293,6 +293,61 @@ app.get('/api/pelabuhan', isAuthenticated, (req, res) => {
   });
 });
 
+app.get('/api/ranks/global', isAuthenticated, async (req, res) => {
+    console.log('Menerima permintaan untuk peringkat global...');
+    try {
+        // 1. Baca daftar semua pelabuhan dari file JSON
+        const portFile = fs.readFileSync(__dirname + '/pelabuhan.json', 'utf8');
+        const allPorts = JSON.parse(portFile);
+        const portCodes = allPorts.map(p => p.code);
+
+        // 2. Tentukan periode: bulan dan tahun saat ini
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        console.log(`Menghitung peringkat untuk periode: ${month}/${year}`);
+
+        // 3. Fungsi untuk mengambil data untuk satu pelabuhan
+        const fetchPortData = async (portCode) => {
+            // Kita hanya butuh jumlah data, jadi kita set 'length' ke 1 untuk request cepat
+            const url = `https://monitoring-inaportnet.dephub.go.id/monitoring/byPort/list/${portCode}/dn/${year}/${month}?draw=1&start=0&length=1`;
+            try {
+                const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) return { code: portCode, count: 0 }; // Jika gagal, anggap 0
+                const json = await response.json();
+                // 'recordsTotal' adalah jumlah total kapal yang sandar (DN)
+                return { code: portCode, count: json.recordsTotal || 0 };
+            } catch (error) {
+                return { code: portCode, count: 0 }; // Jika error, anggap 0
+            }
+        };
+
+        // 4. Jalankan semua permintaan secara paralel untuk efisiensi
+        const promises = portCodes.map(code => fetchPortData(code));
+        const results = await Promise.all(promises);
+
+        // 5. Gabungkan hasil dengan nama pelabuhan, filter yang tidak ada aktivitas, dan urutkan
+        const rankedResults = results
+            .map(result => {
+                const portInfo = allPorts.find(p => p.code === result.code);
+                return {
+                    code: result.code,
+                    name: portInfo ? portInfo.name : 'Tidak Dikenal',
+                    shipCount: result.count
+                };
+            })
+            .filter(port => port.shipCount > 0)
+            .sort((a, b) => b.shipCount - a.shipCount);
+        
+        console.log(`Berhasil menghitung peringkat, ditemukan ${rankedResults.length} pelabuhan aktif.`);
+        res.json(rankedResults);
+
+    } catch (e) {
+        console.error("Error di /api/ranks/global:", e);
+        res.status(500).json({ error: 'Gagal memproses peringkat global: ' + e.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, ()=> console.log('Server jalan di http://localhost:'+PORT))
 
