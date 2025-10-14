@@ -202,15 +202,20 @@ app.get('/api/kapal',isAuthenticated, async (req,res)=>{
     const r = await fetch(url, {
       method:'POST',
       headers:{
-        'Origin':'https://kapal.dephub.go.id',
-        'Referer':'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
-        'X-Requested-With':'XMLHttpRequest',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
         'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-        'User-Agent':'Mozilla/5.0'
+        'X-Requested-With':'XMLHttpRequest',
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
+        'Origin': 'https://kapal.dephub.go.id'
+        
       },
       body
     })
-    if(!r.ok) throw new Error('HTTP '+r.status)
+    if(!r.ok) {
+        throw new Error(`Server Ditkapel merespons dengan status: ${r.status}`);
+    }
+
     const j = await r.json()
     const data = Array.isArray(j?.data)? j.data : []
 
