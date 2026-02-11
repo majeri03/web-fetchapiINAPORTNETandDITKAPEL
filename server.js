@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session'); // <-- BARU
+const cookieSession = require('cookie-session');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const cheerio = require('cheerio');
 const admin = require('firebase-admin');
@@ -16,17 +16,11 @@ admin.initializeApp({
 });
 
 // --- KONFIGURASI SESI --- (INI BAGIAN BARU)
-app.use(session({
-  secret: 'kucing-lucu-rahasia-bangettrgrggegeggggrgrgrgrgrgrgwaweiref77389bb', // Ganti dengan string acak yang lebih aman
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false, // Set 'true' jika Anda menggunakan HTTPS
-    httpOnly: true, // Mencegah akses cookie dari JavaScript sisi klien
-    maxAge: 24 * 60 * 60 * 1000 // Sesi berlaku selama 24 jam
-  }
+app.use(cookieSession({
+  name: 'session',
+  keys: ['kucing-lucu-rahasia-bangettrgrggegeggggrgrgrgrgrgrgwaweiref77389bb'], // <-- Gunakan 'keys' berupa array, bukan 'secret'
+  maxAge: 24 * 60 * 60 * 1000 // Sesi berlaku selama 24 jam
 }));
-
 
 // Middleware untuk file statis di folder 'public'
 app.use(express.static('public'));
@@ -58,13 +52,8 @@ app.post('/api/login', async (req, res) => {
 
 // --- ENDPOINT BARU: UNTUK LOGOUT & MENGHAPUS SESI ---
 app.post('/api/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      return res.status(500).json({ error: 'Gagal logout.' });
-    }
-    res.clearCookie('connect.sid'); // Hapus cookie sesi dari browser
-    res.status(200).json({ message: 'Logout berhasil.' });
-  });
+  req.session = null; // Menghapus sesi untuk cookie-session
+  res.status(200).json({ message: 'Logout berhasil.' });
 });
 
 
@@ -242,7 +231,10 @@ app.post('/api/kapal/batch', isAuthenticated, async (req, res) => {
             return res.status(400).json({ error: 'Daftar nama kapal (names) harus berupa array.' });
         }
 
-        // Fungsi helper untuk mengambil data satu kapal
+        // Fungsi helper untuk delay/jeda
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Fungsi helper untuk mengambil data satu kapal DENGAN HEADER LENGKAP
         const fetchKapalData = async (nama) => {
             const url = 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/api-kapal.php';
             const body = new URLSearchParams({
@@ -250,21 +242,40 @@ app.post('/api/kapal/batch', isAuthenticated, async (req, res) => {
             });
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                headers: { 
+                    'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Referer': 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
+                    'Origin': 'https://kapal.dephub.go.id'
+                },
                 body
             });
             if (response.ok) {
                 const json = await response.json();
                 return Array.isArray(json.data) ? json.data : [];
             }
-            return []; // Kembalikan array kosong jika fetch gagal
+            return []; 
         };
 
-        // Mengambil semua data kapal secara paralel
-        const promises = names.map(nama => fetchKapalData(nama));
-        const results = await Promise.all(promises);
-
-        let allRows = results.flat(); // Menggabungkan semua hasil menjadi satu array
+        // MENGUBAH Promise.all MENJADI LOOPING DENGAN JEDA (Mencegah Blokir Firewall)
+        let allRows = [];
+        for (let i = 0; i < names.length; i++) {
+            try {
+                const data = await fetchKapalData(names[i]);
+                allRows.push(...data);
+            } catch (err) {
+                console.error(`Gagal mengambil data kapal ${names[i]}:`, err.message);
+                // Jika error, tetap lanjut ke kapal berikutnya
+            }
+            
+            // Beri jeda 300 milidetik sebelum request kapal selanjutnya 
+            // Jangan dihapus agar IP servermu tidak kena ban/blokir
+            if (i < names.length - 1) {
+                await sleep(300);
+            }
+        }
 
         // Format data seperti endpoint /api/kapal tunggal
         const fields = [
@@ -355,7 +366,12 @@ app.get('/api/ranks/global', isAuthenticated, async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000
-app.listen(PORT, ()=> console.log('Server jalan di http://localhost:'+PORT))
+const PORT = process.env.PORT || 3000;
 
+// Hanya jalankan app.listen jika di lokal (bukan Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log('Server jalan di http://localhost:' + PORT));
+}
 
+// Export app untuk Vercel
+module.exports = app;
