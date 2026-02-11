@@ -128,10 +128,6 @@ app.get('/api/list', isAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/dashboard.html');
-});
-
 // ---------- Inaportnet detail: parse Perusahaan + Asal/Tujuan ----------
 // Regex yang lebih "sadar" akan batas kata untuk mencegah kesalahan parsing
 const LABEL_BREAKERS = "(?:Asal|Tujuan|Waktu|Bendera|Call\\s*Sign|IMO|Jenis\\s*Trayek|Trayek|Nama\\s*Kapal|GT|LOA|Nakhoda|Nomor\\s*PKK|SPB|ETA|ETD|Pelabuhan|Lokasi|DWT|MMSI|No\\.?\\s*SSM|Single\\s*Billing|STATUS|KETERANGAN|Layanan)";
