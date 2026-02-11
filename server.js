@@ -23,7 +23,7 @@ app.use(cookieSession({
 }));
 
 // Middleware untuk file statis di folder 'public'
-app.use(express.static('public'));
+app.use(express.static(__dirname + '/public'));
 
 // --- ENDPOINT BARU: UNTUK LOGIN & MEMBUAT SESI ---
 app.post('/api/login', async (req, res) => {
