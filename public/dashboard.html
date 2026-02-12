@@ -598,9 +598,9 @@
             if (!r.ok) throw new Error(`Server merespons: ${(await r.json()).error}`);
 
             const j = await r.json();
-            const res_headers = ["Nomor PKK", "Nama Kapal", "Nama Perusahaan", "Jenis Trayek", "Asal (Kedatangan)", "Tujuan (Keberangkatan)"];
+            const res_headers = ["Nomor PKK", "Nama Kapal", "Jenis Kapal", "Nama Perusahaan", "Jenis Trayek", "Asal (Kedatangan)", "Tujuan (Keberangkatan)"];
             const res_rows = (j.data || []).map(d => ({
-            "Nomor PKK": d.nomor_pkk || '', "Nama Kapal": d.nama_kapal || '', "Nama Perusahaan": "",
+            "Nomor PKK": d.nomor_pkk || '', "Nama Kapal": d.nama_kapal || '',"Jenis Kapal": '', "Nama Perusahaan": "",
             "Jenis Trayek": (d.trayek_berangkat || d.trayek_datang || ''), "Asal (Kedatangan)": "", "Tujuan (Keberangkatan)": ""
             }));
 
@@ -649,7 +649,10 @@
           s.progress = { current: 0, total: tasks.length, show: true };
           s.overlay = true; s.overlayMsg = `Melengkapi ${tasks.length} data perusahaan...`;
           s.loading = true;
-
+          if (!s.columns.some(c => c.key === 'Jenis Kapal')) {
+    s.columns.push({ key: 'Jenis Kapal', label: 'Jenis Kapal', visible: true });
+    s.filters['Jenis Kapal'] = [];
+  }
           for (const row of tasks) {
             if (signal.aborted) { // <-- Cek sinyal di setiap loop
                 wasCancelled = true;
@@ -665,6 +668,7 @@
                   if (j.perusahaan) s.rows[originalIndex]["Nama Perusahaan"] = j.perusahaan;
                   if (j.asal) s.rows[originalIndex]["Asal (Kedatangan)"] = j.asal;
                   if (j.tujuan) s.rows[originalIndex]["Tujuan (Keberangkatan)"] = j.tujuan;
+                  if (j.jenis_kapal) s.rows[originalIndex]["Jenis Kapal"] = j.jenis_kapal;
                 }
               }
             } catch (e) { 
@@ -982,29 +986,101 @@ const searchDitkapelBatch = async () => {
         alert('Tidak ada nama kapal unik untuk dicari. Ambil data Inaportnet terlebih dahulu.');
         return;
     }
+
+    // CEK CHECKPOINT: Apakah ada proses yang tertunda?
+    const checkpointData = localStorage.getItem('ditkapel_batch_checkpoint');
+    let checkpoint = 0;
+    let existingData = [];
+    
+    if (checkpointData) {
+        const parsed = JSON.parse(checkpointData);
+        const shouldResume = confirm(
+            `Ditemukan proses yang belum selesai (${parsed.checkpoint}/${parsed.total} kapal).\n` +
+            `Apakah Anda ingin melanjutkan dari checkpoint terakhir?`
+        );
+        
+        if (shouldResume) {
+            checkpoint = parsed.checkpoint;
+            existingData = parsed.data || [];
+        } else {
+            // Hapus checkpoint jika user pilih mulai dari awal
+            localStorage.removeItem('ditkapel_batch_checkpoint');
+        }
+    }
+
     s.ditkapelLoading = true;
-    s.ditkapelResults = { columns: [], rows: [] }; // Kosongkan hasil lama
+    s.overlay = true;
+    s.overlayMsg = 'Mencari data kapal secara massal...';
+    s.progress.show = true;
+    s.progress.current = checkpoint;
+    s.progress.total = uniqueShipNames.value.length;
+    
     try {
-        // Menggunakan endpoint BARU /api/kapal/batch
-        const response = await fetch('/api/kapal/batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ names: uniqueShipNames.value })
-        });
-        if (!response.ok) throw new Error('Gagal mengambil data dari server.');
-        const j = await response.json();
-        s.ditkapelResults.rows = j.data || [];
-        s.ditkapelResults.columns = (j.headers || []).map(h => ({ key: h, label: h, visible: true }));
+        const CHUNK_SIZE = 50; // Proses 50 kapal per request
+        const allData = [...existingData]; // Mulai dari data yang sudah ada (jika resume)
+        
+        for (let i = checkpoint; i < uniqueShipNames.value.length; i += CHUNK_SIZE) {
+            const chunk = uniqueShipNames.value.slice(i, i + CHUNK_SIZE);
+            
+            console.log(`Fetching chunk: ${i} to ${i + chunk.length}`);
+            
+            const response = await fetch('/api/kapal/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    names: chunk,
+                    checkpoint: 0 // Backend akan handle batch-nya sendiri
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Gagal mengambil data dari server.');
+            }
+            
+            const j = await response.json();
+            allData.push(...(j.data || []));
+            
+            // UPDATE PROGRESS
+            s.progress.current = Math.min(i + chunk.length, uniqueShipNames.value.length);
+            
+            // SIMPAN CHECKPOINT ke localStorage
+            localStorage.setItem('ditkapel_batch_checkpoint', JSON.stringify({
+                checkpoint: s.progress.current,
+                total: uniqueShipNames.value.length,
+                data: allData
+            }));
+            
+            // Delay kecil antar chunk
+            if (i + chunk.length < uniqueShipNames.value.length) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+        
+        // SELESAI - Set hasil dan hapus checkpoint
+        s.ditkapelResults.rows = allData;
+        s.ditkapelResults.columns = allData.length > 0 
+            ? Object.keys(allData[0]).map(k => ({ key: k, label: k, visible: true }))
+            : [];
+        
         s.ditkapelFilters = {};
         s.ditkapelResults.columns.forEach(c => {
             s.ditkapelFilters[c.key] = [];
         });
-            } catch (e) {
-                alert('Terjadi kesalahan: ' + e.message);
-            } finally {
-                s.ditkapelLoading = false;
-            }
-        };
+        
+        // HAPUS checkpoint setelah selesai
+        localStorage.removeItem('ditkapel_batch_checkpoint');
+        
+        alert(`Berhasil mengambil data untuk ${allData.length} kapal!`);
+        
+    } catch (e) {
+        alert('Terjadi kesalahan: ' + e.message);
+        console.error(e);
+    } finally {
+        s.ditkapelLoading = false;
+        s.overlay = false;
+        s.progress.show = false;
+    }
+};
         const exportData = (format) => {
             s.exportDropdownOpen = false;
             const dataToExport = filteredRows.value;

@@ -70,15 +70,97 @@ function isAuthenticated(req, res, next) {
 }
 
 // ---------- Inaportnet list ----------
+// Helper function untuk retry
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      return response;
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed for ${url}:`, error.message);
+      
+      if (i === maxRetries - 1) {
+        throw error; // Throw jika sudah retry maksimal
+      }
+      
+      // Wait dengan exponential backoff
+      const waitTime = Math.pow(2, i) * 1000; // 1s, 2s, 4s
+      console.log(`Retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
+
+// Helper function untuk fetch 1 bulan dengan chunking
+async function fetchMonthData(port, jenis, year, month, search = '') {
+  const allRows = [];
+  const CHUNK_SIZE = 1000; // Kurangi dari 5000 ke 1000
+  let currentStart = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const listUrl = `https://monitoring-inaportnet.dephub.go.id/monitoring/byPort/list/${encodeURIComponent(port)}/${encodeURIComponent(jenis)}/${year}/${month}`;
+    const url = new URL(listUrl);
+    url.searchParams.set('draw', '1');
+    url.searchParams.set('start', String(currentStart));
+    url.searchParams.set('length', String(CHUNK_SIZE));
+    url.searchParams.set('search[value]', search || '');
+    url.searchParams.set('search[regex]', 'false');
+    
+    console.log(`Fetching ${year}/${month}: start=${currentStart}, length=${CHUNK_SIZE}`);
+    
+    try {
+      const response = await fetchWithRetry(url.toString(), {
+        headers: {
+          'Accept': 'application/json, text/javascript, */*; q=0.01',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Connection': 'keep-alive'
+        }
+      });
+
+      if (!response.ok) {
+        console.warn(`HTTP ${response.status} untuk ${year}/${month}`);
+        break; // Skip bulan ini jika error
+      }
+
+      const json = await response.json();
+      const data = Array.isArray(json?.data) ? json.data : [];
+      
+      allRows.push(...data);
+      
+      // Cek apakah masih ada data lagi
+      const recordsTotal = json.recordsTotal || 0;
+      currentStart += CHUNK_SIZE;
+      
+      if (currentStart >= recordsTotal || data.length === 0) {
+        hasMore = false;
+      }
+
+      // Delay kecil antar chunk untuk menghindari rate limiting
+      if (hasMore) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+    } catch (error) {
+      console.error(`Error fetching ${year}/${month}:`, error.message);
+      break; // Skip bulan ini jika error
+    }
+  }
+
+  console.log(`Total data fetched untuk ${year}/${month}: ${allRows.length}`);
+  return allRows;
+}
+
+// Main endpoint
 app.get('/api/list', isAuthenticated, async (req, res) => {
   try {
-    // Mengambil parameter rentang waktu yang baru
     const { port, jenis, start_year, start_month, end_year, end_month, search = '' } = req.query;
     
-    // Validasi parameter baru
+    // Validasi parameter
     if (!port || !jenis || !start_year || !start_month || !end_year || !end_month) {
-      // Pesan eror ini sekarang sesuai dengan parameter yang diharapkan
-      return res.status(400).json({ error: 'Parameter port, jenis, dan rentang waktu (start/end month/year) wajib diisi' });
+      return res.status(400).json({ 
+        error: 'Parameter port, jenis, dan rentang waktu (start/end month/year) wajib diisi' 
+      });
     }
 
     const startDate = new Date(start_year, start_month - 1);
@@ -86,44 +168,31 @@ app.get('/api/list', isAuthenticated, async (req, res) => {
     let allRows = [];
     let current = new Date(startDate);
     
-    const fetchPromises = [];
-
-    // Membuat daftar semua URL yang akan di-fetch berdasarkan rentang waktu
+    // Fetch data untuk setiap bulan dalam rentang
     while (current <= endDate) {
       const year = current.getFullYear();
       const month = String(current.getMonth() + 1).padStart(2, '0');
       
-      const listUrl = `https://monitoring-inaportnet.dephub.go.id/monitoring/byPort/list/${encodeURIComponent(port)}/${encodeURIComponent(jenis)}/${year}/${month}`;
-      const url = new URL(listUrl);
-      url.searchParams.set('draw', '1');
-      url.searchParams.set('start', '0');
-      url.searchParams.set('length', '5000');
-      url.searchParams.set('search[value]', search || '');
-      url.searchParams.set('search[regex]', 'false');
+      try {
+        const monthData = await fetchMonthData(port, jenis, year, month, search);
+        allRows = allRows.concat(monthData);
+      } catch (error) {
+        console.error(`Gagal fetch data untuk ${year}/${month}:`, error.message);
+        // Lanjut ke bulan berikutnya meskipun ada error
+      }
       
-      fetchPromises.push(fetch(url.toString(), { headers: { 'Accept': 'application/json' } }));
-      
-      // Lanjut ke bulan berikutnya
+      // Delay antar bulan untuk menghindari overload
       current.setMonth(current.getMonth() + 1);
-    }
-
-    // Menjalankan semua permintaan secara paralel untuk efisiensi
-    const responses = await Promise.all(fetchPromises);
-
-    for (const r of responses) {
-      if (!r.ok) {
-        console.warn(`Peringatan: Gagal mengambil data untuk salah satu bulan (HTTP ${r.status})`);
-      } else {
-        const j = await r.json();
-        if (Array.isArray(j?.data)) {
-          allRows = allRows.concat(j.data);
-        }
+      if (current <= endDate) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
+    console.log(`Total data fetched untuk semua bulan: ${allRows.length}`);
     return res.json({ data: allRows, total: allRows.length });
 
   } catch (e) {
+    console.error('Error di /api/list:', e.message, e.stack);
     res.status(500).json({ error: e.message });
   }
 });
@@ -147,154 +216,312 @@ const tujuan = tujuanMatch ? clean(tujuanMatch[1]) : ""
 }
 
 
-app.get('/api/detail', isAuthenticated, async (req,res)=>{
-  try{
+app.get('/api/detail', isAuthenticated, async (req, res) => {
+  try {
     const { nomor_pkk } = req.query;
-    if(!nomor_pkk) return res.status(400).json({error:'param wajib: nomor_pkk'});
+    if (!nomor_pkk) return res.status(400).json({ error: 'param wajib: nomor_pkk' });
 
     const detailUrl = `https://monitoring-inaportnet.dephub.go.id/monitoring/detail?nomor_pkk=${encodeURIComponent(nomor_pkk)}`;
-    const r = await fetch(detailUrl, { headers:{ 'Accept':'text/html,*/*;q=0.8' }});
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    const r = await fetch(detailUrl, { 
+      headers: { 
+        'Accept': 'text/html,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    if (!r.ok) throw new Error('HTTP ' + r.status);
 
     const html = await r.text();
-    // Menggunakan cheerio hanya untuk mengekstrak teks bersih dari body
-    const cheerio = require('cheerio');
     const $ = cheerio.load(html);
-    const textContent = $('body').text();
+    
+    // Ambil text dari card-title yang mengandung nomor PKK dan nama kapal
+    const cardTitle = $('.card-title b').first().text().trim();
+    
+    // Parse jenis kapal dari dalam kurung
+    // Format: "PKK.DN.IDMAK.2602.000163 - NGGAPULU (PASSENGER)"
+    let jenisKapal = '';
+    const jenisMatch = cardTitle.match(/\(([^)]+)\)/);
+    if (jenisMatch) {
+      jenisKapal = jenisMatch[1].trim(); // "PASSENGER"
+    }
+    
+    // Ambil nama kapal dari card-title
+    // Format: "PKK.DN.IDMAK.2602.000163 - NGGAPULU (PASSENGER)"
+    let namaKapal = '';
+    const namaMatch = cardTitle.match(/- ([^(]+)/);
+    if (namaMatch) {
+      namaKapal = namaMatch[1].trim(); // "NGGAPULU"
+    }
+    
+    // Parse data lainnya (perusahaan, asal, tujuan)
+    const bodyText = $('body').text();
+    const perusahaan = parseCompany(bodyText);
+    const { asal, tujuan } = parseAsalTujuan(bodyText);
 
-    // Memanggil fungsi-fungsi yang Anda berikan
-    const perusahaan = parseCompany(textContent);
-    const { asal, tujuan } = parseAsalTujuan(textContent);
+    // Kirim response dengan data lengkap
+    res.json({ 
+      nomor_pkk,
+      nama_kapal: namaKapal,
+      jenis_kapal: jenisKapal,
+      perusahaan, 
+      asal, 
+      tujuan 
+    });
 
-    // Mengirimkan hasil parsing
-    res.json({ perusahaan, asal, tujuan });
-
-  } catch(e) {
+  } catch (e) {
     console.error(`Error di /api/detail untuk PKK ${req.query.nomor_pkk}:`, e);
-    res.status(500).json({error:e.message});
+    res.status(500).json({ error: e.message });
   }
 });
 
 
 // ---------- Ditkapel search ----------
-app.get('/api/kapal',isAuthenticated, async (req,res)=>{
-  try{
+// Helper function untuk retry dengan exponential backoff
+async function fetchWithRetryDitkapel(url, options, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Jika berhasil, return response
+      if (response.ok) {
+        return response;
+      }
+      
+      // Jika HTTP error (bukan network error), throw
+      if (response.status >= 400) {
+        console.error(`HTTP ${response.status} dari Ditkapel`);
+        throw new Error(`Server Ditkapel merespons dengan status: ${response.status}`);
+      }
+      
+      return response;
+      
+    } catch (error) {
+      console.error(`Attempt ${i + 1}/${maxRetries} failed:`, error.message);
+      
+      // Jika sudah retry maksimal, throw error
+      if (i === maxRetries - 1) {
+        throw error;
+      }
+      
+      // Wait dengan exponential backoff: 2s, 4s, 8s
+      const waitTime = Math.pow(2, i + 1) * 1000;
+      console.log(`Retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
+
+// ---------- Ditkapel search ----------
+app.get('/api/kapal', isAuthenticated, async (req, res) => {
+  try {
     const { nama } = req.query
-    if(!nama) return res.status(400).json({error:'param wajib: nama'})
+    if (!nama) return res.status(400).json({ error: 'param wajib: nama' })
+    
     const url = 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/api-kapal.php'
     const body = new URLSearchParams({
-      draw:'1', start:'0', length:'200', 'search[value]':'', 'search[regex]':'false', nama_kapal: nama
+      draw: '1', 
+      start: '0', 
+      length: '200', 
+      'search[value]': '', 
+      'search[regex]': 'false', 
+      nama_kapal: nama
     })
-    const r = await fetch(url, {
-      method:'POST',
-      headers:{
+    
+    // GUNAKAN fetchWithRetryDitkapel (dengan retry logic)
+    const r = await fetchWithRetryDitkapel(url, {
+      method: 'POST',
+      headers: {
         'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-        'X-Requested-With':'XMLHttpRequest',
-        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
         'Referer': 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
-        'Origin': 'https://kapal.dephub.go.id'
-        
+        'Origin': 'https://kapal.dephub.go.id',
+        'Connection': 'keep-alive' // TAMBAHKAN ini
       },
       body
     })
-    if(!r.ok) {
-        throw new Error(`Server Ditkapel merespons dengan status: ${r.status}`);
-    }
 
     const j = await r.json()
-    const data = Array.isArray(j?.data)? j.data : []
-
+    
+    // Validasi response
+    if (!j) {
+      throw new Error('Response dari Ditkapel API kosong')
+    }
+    
+    const data = Array.isArray(j?.data) ? j.data : []
+    
+    // Field mapping yang LENGKAP sesuai dengan struktur API terbaru
     const fields = [
-      ["NamaKapal","Nama Kapal"],["EksNamaKapal","Eks Nama Kapal"],["HurufPengenal","Call Sign"],
-      ["JenisDetailKet","Jenis Kapal"],["NamaPemilik","Nama Pemilik"],["TandaPendaftaran","No. Tanda Pendaftaran"],
-      ["Panjang","Panjang"],["Lebar","Lebar"],["Dalam","Dalam"],["LengthOfAll","LOA"],
-      ["IsiKotor","GT"],["IsiBersih","Isi Bersih"],["NomorIMO","Nomor IMO"],["TahunPembuatan","Tahun Pembuatan"]
+      ["NamaKapal", "Nama Kapal"],
+      ["EksNamaKapal", "Eks Nama Kapal"],
+      ["HurufPengenal", "Call Sign"],
+      ["JenisDetailKet", "Jenis Kapal"],
+      ["NamaPemilik", "Nama Pemilik"],
+      ["KotaPemilik", "Kota Pemilik"],
+      ["AlamatPemilik", "Alamat Pemilik"],
+      ["TandaPendaftaran", "No. Tanda Pendaftaran"],
+      ["PelabuhanPendaftaran", "Pelabuhan Pendaftaran"],
+      ["TempatPendaftaran", "Tempat Pendaftaran"],
+      ["TanggalDaftar", "Tanggal Daftar"],
+      ["Panjang", "Panjang"],
+      ["Lebar", "Lebar"],
+      ["Dalam", "Dalam"],
+      ["LengthOfAll", "LOA"],
+      ["IsiKotor", "GT"],
+      ["IsiBersih", "Isi Bersih"],
+      ["NomorIMO", "Nomor IMO"],
+      ["TahunPembuatan", "Tahun Pembuatan"],
+      ["TempatPembuatan", "Tempat Pembuatan"],
+      ["BahanUtamaKapal", "Bahan Utama"],
+      ["Mesin", "Mesin"],
+      ["Daya", "Daya"],
+      ["PenggerakUtama", "Penggerak Utama"],
+      ["SuratUkurNo", "Surat Ukur No"],
+      ["SuratTanggalUkur", "Tanggal Ukur"],
+      ["TandaSelar", "Tanda Selar"],
+      ["NomorAkta", "Nomor Akta"],
+      ["NPWP", "NPWP"],
+      ["BenderaAsal", "Bendera Asal"],
     ]
-    const headers = fields.map(([,h])=>h)
-    const rows = data.map(d=>{
-      const o={}; fields.forEach(([k,h])=> o[h] = (d?.[k] ?? '').toString().trim()); return o
+    
+    const headers = fields.map(([, h]) => h)
+    const rows = data.map(d => {
+      const o = {}
+      fields.forEach(([k, h]) => {
+        o[h] = (d?.[k] ?? '').toString().trim()
+      })
+      return o
     })
+    
     res.json({ headers, data: rows })
-  }catch(e){
-    res.status(500).json({error:e.message})
+  } catch (e) {
+    console.error('Error di /api/kapal:', e.message, e.stack)
+    res.status(500).json({ error: e.message })
   }
 })
 
 app.post('/api/kapal/batch', isAuthenticated, async (req, res) => {
-    try {
-        const { names } = req.body;
-        if (!Array.isArray(names) || names.length === 0) {
-            return res.status(400).json({ error: 'Daftar nama kapal (names) harus berupa array.' });
-        }
-
-        // Fungsi helper untuk delay/jeda
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Fungsi helper untuk mengambil data satu kapal DENGAN HEADER LENGKAP
-        const fetchKapalData = async (nama) => {
-            const url = 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/api-kapal.php';
-            const body = new URLSearchParams({
-                draw: '1', start: '0', length: '20', 'search[value]': '', 'search[regex]': 'false', nama_kapal: nama
-            });
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 
-                    'Accept': 'application/json, text/javascript, */*; q=0.01',
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Referer': 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
-                    'Origin': 'https://kapal.dephub.go.id'
-                },
-                body
-            });
-            if (response.ok) {
-                const json = await response.json();
-                return Array.isArray(json.data) ? json.data : [];
-            }
-            return []; 
-        };
-
-        // MENGUBAH Promise.all MENJADI LOOPING DENGAN JEDA (Mencegah Blokir Firewall)
-        let allRows = [];
-        for (let i = 0; i < names.length; i++) {
-            try {
-                const data = await fetchKapalData(names[i]);
-                allRows.push(...data);
-            } catch (err) {
-                console.error(`Gagal mengambil data kapal ${names[i]}:`, err.message);
-                // Jika error, tetap lanjut ke kapal berikutnya
-            }
-            
-            // Beri jeda 300 milidetik sebelum request kapal selanjutnya 
-            // Jangan dihapus agar IP servermu tidak kena ban/blokir
-            if (i < names.length - 1) {
-                await sleep(300);
-            }
-        }
-
-        // Format data seperti endpoint /api/kapal tunggal
-        const fields = [
-            ["NamaKapal","Nama Kapal"],["EksNamaKapal","Eks Nama Kapal"],["HurufPengenal","Call Sign"],
-            ["JenisDetailKet","Jenis Kapal"],["NamaPemilik","Nama Pemilik"],["TandaPendaftaran","No. Tanda Pendaftaran"],
-            ["Panjang","Panjang"],["Lebar","Lebar"],["Dalam","Dalam"],["LengthOfAll","LOA"],
-            ["IsiKotor","GT"],["IsiBersih","Isi Bersih"],["NomorIMO","Nomor IMO"],["TahunPembuatan","Tahun Pembuatan"]
-        ];
-        const headers = fields.map(([,h]) => h);
-        const formattedRows = allRows.map(d => {
-            const o = {};
-            fields.forEach(([k, h]) => o[h] = (d?.[k] ?? '').toString().trim());
-            return o;
-        });
-
-        res.json({ headers, data: formattedRows });
-
-    } catch (e) {
-        console.error("Error di /api/kapal/batch:", e);
-        res.status(500).json({ error: e.message });
+  try {
+    const { names, checkpoint = 0 } = req.body;
+    
+    if (!Array.isArray(names) || names.length === 0) {
+      return res.status(400).json({ error: 'Daftar nama kapal (names) harus berupa array.' })
     }
-});
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+    // GUNAKAN fetchWithRetryDitkapel di sini juga
+    const fetchKapalData = async (nama) => {
+      const url = 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/api-kapal.php'
+      const body = new URLSearchParams({
+        draw: '1', start: '0', length: '20', 
+        'search[value]': '', 'search[regex]': 'false', 
+        nama_kapal: nama
+      })
+      
+      try {
+        // GUNAKAN retry helper
+        const response = await fetchWithRetryDitkapel(url, {
+          method: 'POST',
+          headers: { 
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://kapal.dephub.go.id/ditkapel_service/data_kapal/',
+            'Origin': 'https://kapal.dephub.go.id',
+            'Connection': 'keep-alive' // TAMBAHKAN ini
+          },
+          body
+        })
+        
+        const json = await response.json()
+        return Array.isArray(json.data) ? json.data : []
+        
+      } catch (err) {
+        console.error(`Error fetching ${nama} after retries:`, err.message)
+        return [] // Return empty jika gagal setelah retry
+      }
+    }
+
+    // MULAI DARI CHECKPOINT
+    const namesToFetch = names.slice(checkpoint);
+    console.log(`Fetching ${namesToFetch.length} kapal (starting from checkpoint ${checkpoint})`);
+
+    let allRows = []
+    const BATCH_SIZE = 3; // KURANGI dari 5 ke 3 untuk lebih aman
+    
+    for (let i = 0; i < namesToFetch.length; i += BATCH_SIZE) {
+      const batch = namesToFetch.slice(i, i + BATCH_SIZE);
+      
+      // Fetch semua kapal dalam batch secara paralel
+      const batchPromises = batch.map(nama => fetchKapalData(nama));
+      const batchResults = await Promise.all(batchPromises);
+      
+      // Gabungkan hasil
+      batchResults.forEach(result => {
+        if (result.length > 0) {
+          allRows.push(...result);
+        }
+      });
+      
+      // Delay antar batch - PERPANJANG delay untuk lebih aman
+      if (i + BATCH_SIZE < namesToFetch.length) {
+        await sleep(1000); // 1 detik delay antar batch
+      }
+      
+      console.log(`Progress: ${Math.min(i + BATCH_SIZE, namesToFetch.length)}/${namesToFetch.length}`);
+    }
+
+    // ... rest of code sama seperti sebelumnya ...
+    const fields = [
+      ["NamaKapal", "Nama Kapal"],
+      ["EksNamaKapal", "Eks Nama Kapal"],
+      ["HurufPengenal", "Call Sign"],
+      ["JenisDetailKet", "Jenis Kapal"],
+      ["NamaPemilik", "Nama Pemilik"],
+      ["KotaPemilik", "Kota Pemilik"],
+      ["AlamatPemilik", "Alamat Pemilik"],
+      ["TandaPendaftaran", "No. Tanda Pendaftaran"],
+      ["PelabuhanPendaftaran", "Pelabuhan Pendaftaran"],
+      ["TempatPendaftaran", "Tempat Pendaftaran"],
+      ["TanggalDaftar", "Tanggal Daftar"],
+      ["Panjang", "Panjang"],
+      ["Lebar", "Lebar"],
+      ["Dalam", "Dalam"],
+      ["LengthOfAll", "LOA"],
+      ["IsiKotor", "GT"],
+      ["IsiBersih", "Isi Bersih"],
+      ["NomorIMO", "Nomor IMO"],
+      ["TahunPembuatan", "Tahun Pembuatan"],
+      ["TempatPembuatan", "Tempat Pembuatan"],
+      ["BahanUtamaKapal", "Bahan Utama"],
+      ["Mesin", "Mesin"],
+      ["Daya", "Daya"],
+      ["PenggerakUtama", "Penggerak Utama"],
+      ["SuratUkurNo", "Surat Ukur No"],
+      ["SuratTanggalUkur", "Tanggal Ukur"],
+      ["TandaSelar", "Tanda Selar"],
+      ["NomorAkta", "Nomor Akta"],
+      ["NPWP", "NPWP"],
+      ["BenderaAsal", "Bendera Asal"],
+    ]
+    
+    const headers = fields.map(([, h]) => h)
+    const formattedRows = allRows.map(d => {
+      const o = {}
+      fields.forEach(([k, h]) => o[h] = (d?.[k] ?? '').toString().trim())
+      return o
+    })
+
+    res.json({ headers, data: formattedRows })
+
+  } catch (e) {
+    console.error("Error di /api/kapal/batch:", e)
+    res.status(500).json({ error: e.message })
+  }
+})
 const fs = require('fs');
 
 app.get('/api/pelabuhan', isAuthenticated, (req, res) => {
